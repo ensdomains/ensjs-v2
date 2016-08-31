@@ -1,0 +1,35 @@
+{
+  "name": "ethereum-ens",
+  "version": "0.1.0",
+  "description": "Javascript bindings for the Ethereum Name Service",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Arachnid/ensjs.git"
+  },
+  "keywords": [
+    "ethereum",
+    "ens",
+    "nameserver"
+  ],
+  "author": "Nick Johnson",
+  "license": "LGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/Arachnid/ensjs/issues"
+  },
+  "homepage": "https://github.com/Arachnid/ensjs#readme",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "crypto-js": "^3.1.6"
+  },
+  "devDependencies": {
+    "mocha": "^3.0.2",
+    "ethereumjs-testrpc": "^2.2.3",
+    "solc": "^0.3.6"
+  }
+}

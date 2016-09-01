@@ -1,10 +1,11 @@
-var ENS = require("../index.js");
+var ENS = require('../index.js');
 
-var assert = require("assert");
+var assert = require('assert');
+var async = require('async');
 var fs = require('fs');
 var solc = require('solc');
-var TestRPC = require("ethereumjs-testrpc");
-var Web3 = require("web3");
+var TestRPC = require('ethereumjs-testrpc');
+var Web3 = require('web3');
 
 var web3 = new Web3();
 
@@ -70,11 +71,30 @@ describe('ENS', function() {
 			});
 		});
 
+		it('should implement has()', function(done) {
+			ens.resolver('foo.eth', function(err, resolver) {
+				assert.equal(err, null, err);
+				async.seq(function(done) {
+					resolver.has('addr', function(err, result) {
+						assert.equal(err, null, err);
+						assert.equal(result, true);
+						done();
+					});
+				}, function(done) {
+					resolver.has('blah', function(err, result) {
+						assert.equal(err, null, err);
+						assert.equal(result, false);
+						done();
+					});
+				})(done);
+			})
+		})
+
 		it('should error when the name record does not exist', function(done) {
 			ens.resolver('bar.eth', function(err, resolver) {
 				assert.equal(err, null, err);
 				resolver.addr(function(err, result) {
-					assert.equal(err, ENS.NoSuchRecord);
+					assert.equal(err.toString(), "Error: VM Exception while executing eth_call: invalid JUMP");
 					done();
 				})
 			});

@@ -36,66 +36,20 @@
  */
 
 var CryptoJS = require('crypto-js');
+var _ = require('underscore');
 
 var registryInterface = [{"constant":true,"inputs":[{"name":"node","type":"bytes32"}],"name":"resolver","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":true,"inputs":[{"name":"node","type":"bytes32"}],"name":"owner","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes32"},{"name":"resolver","type":"address"}],"name":"setResolver","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes32"},{"name":"label","type":"bytes32"},{"name":"owner","type":"address"}],"name":"setSubnodeOwner","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes32"},{"name":"owner","type":"address"}],"name":"setOwner","outputs":[],"type":"function"}];
 var resolverInterface = [{"constant":true,"inputs":[{"name":"node","type":"bytes32"}],"name":"addr","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":true,"inputs":[{"name":"node","type":"bytes32"},{"name":"kind","type":"bytes32"}],"name":"has","outputs":[{"name":"","type":"bool"}],"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes32"},{"name":"addr","type":"address"}],"name":"setAddr","outputs":[],"type":"function"}];
 
-function Resolver(web3, address, node) {
+function Resolver(web3, address, node, abi) {
     this.web3 = web3;
-    this.contract = web3.eth.contract(resolverInterface).at(address);
-    this.node = node;
     this.resolverAddress = address;
-}
+    this.node = node;
+    this.contract = web3.eth.contract(abi).at(address);
 
-/**
- * addr returns the Ethereum address specified for the name, or throws
- * ENS.NoSuchRecord if the name does not have an associated address.
- * @param {function} callback An optional callback; if specified, the
- *        function executes asynchronously.
- * @returns The resolved address if callback is not supplied.
- */
-Resolver.prototype.addr = function(callback) {
-    if(callback) {
-        this.contract.has(this.node, 'addr', function(err, result) {
-            if(result) {
-                this.contract.addr(this.node, callback);
-            } else {
-                callback(ENS.NoSuchRecord, null);
-            }
-        }.bind(this));
-    } else {
-        if(!this.contract.has(this.node, 'addr'))
-            throw ENS.NoSuchRecord;
-        return this.contract.addr(this.node);
-    }
-}
-
-/**
- * setAddr sets the Ethereum address associated with the name. Note that
- * setAddr is not part of the core ENS spec, and relies on the resolver
- * implementing it and giving you permission to update the name. Resolvers
- * that do not implement it will throw, consuming all gas.
- * @param {address} addr The address to set the name to point to.
- * @param {object} options An optional dict of parameters to pass to web3.
- * @param {function} callback An optional callback; if specified, the
- *        function executes asynchronously.
- * @returns The transaction ID if callback is not supplied.
- */
-Resolver.prototype.setAddr = function(addr) {
-    var callback = undefined;
-    if(typeof arguments[arguments.length - 1] == 'function') {
-        callback = arguments[arguments.length - 1];
-    }
-
-    var params = {};
-    if((callback && arguments.length == 3) || (!callback && arguments.length == 2))
-        params = arguments[arguments.length - 2];
-
-    if(callback) {
-        this.contract.setAddr(this.node, addr, params, callback);
-    } else {
-        return this.contract.setAddr(this.node, addr, params);
-    }
+    _.each(_.functions(this.contract), function(funcname) {
+        this[funcname] = _.partial(this.contract[funcname], this.node);
+    }.bind(this));
 }
 
 /**
@@ -110,7 +64,6 @@ function ENS (web3, address) {
 }
 
 ENS.NameNotFound = Error("ENS name not found");
-ENS.NoSuchRecord = Error("Record does not exist");
 
 function sha3(input) {
     return CryptoJS.SHA3(input, {outputLength: 256})
@@ -145,20 +98,36 @@ function parentNamehash(name) {
 /**
  * resolver returns a resolver object for the specified name, throwing
  * ENS.NameNotFound if the name does not exist in ENS.
+ * Resolver objects are wrappers around web3 contract objects, with the
+ * first argument - always the node ID in an ENS resolver - automatically
+ * supplied. So, to call the `addr(node)` function on a standard resolver,
+ * you only have to call `addr()`.
  * @param {string} name The name to look up.
- * @param {function} callback An optional callback; if specified, the
- *        function executes asynchronously.
- * @returns The resolved address if callback is not supplied.
+ * @param {list} abi Optional. The JSON ABI definition to use for the resolver.
+ *        if none is supplied, a default definition implementing `has`, `addr`
+ *        and `setAddr` is supplied.
+ * @param {function} callback Optional. If specified, the function executes
+ *        asynchronously.
+ * @returns The resolver object if callback is not supplied.
  */
-ENS.prototype.resolver = function(name, callback) {
+ENS.prototype.resolver = function(name) {
     var node = namehash(name);
+
+    var callback = undefined;
+    if(typeof arguments[arguments.length - 1] == 'function') {
+        callback = arguments[arguments.length - 1];
+    }
+
+    var abi = resolverInterface;
+    if((callback && arguments.length == 4) || (!callback && arguments.length == 3))
+        resolverInterface = arguments[arguments.length - 2];
 
     if(!callback) {
         result = this.registry.resolver(node);
         if(result == "0x0000000000000000000000000000000000000000") {
             throw ENS.NameNotFound;
         }
-        return new Resolver(this.web3, result, node);
+        return new Resolver(this.web3, result, node, abi);
     }
 
     this.registry.resolver(node, function(err, result) {
@@ -168,7 +137,7 @@ ENS.prototype.resolver = function(name, callback) {
             if(result == "0x0000000000000000000000000000000000000000") {
                 callback(ENS.NameNotFound, null);
             } else {
-                callback(null, new Resolver(this.web3, result, node));
+                callback(null, new Resolver(this.web3, result, node, abi));
             }
         }
     }.bind(this));

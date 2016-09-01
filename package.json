@@ -1,6 +1,6 @@
 {
   "name": "ethereum-ens",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "homepage": "https://github.com/arachnid/ensjs/",
   "description": "Javascript bindings for the Ethereum Name Service",
   "main": "index.js",
@@ -26,9 +26,11 @@
     "test": "test"
   },
   "dependencies": {
-    "crypto-js": "^3.1.6"
+    "crypto-js": "^3.1.6",
+    "underscore": "^1.8.3"
   },
   "devDependencies": {
+    "async": "^2.0.0",
     "mocha": "^3.0.2",
     "ethereumjs-testrpc": "^2.2.3",
     "solc": "^0.3.6"

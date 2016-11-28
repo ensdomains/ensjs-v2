@@ -14,6 +14,7 @@
 /** 
  * @file This package provides an easy-to-use interface to the Ethereum Name Service.
  * Example usage:
+ *
  *     var ENS = require('ethereum-ens');
  *     var Web3 = require('web3');
  *

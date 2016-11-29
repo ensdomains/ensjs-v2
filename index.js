@@ -17,6 +17,7 @@ var _ = require('underscore');
 
 var registryInterface = [{"constant":true,"inputs":[{"name":"node","type":"bytes32"}],"name":"resolver","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":true,"inputs":[{"name":"node","type":"bytes32"}],"name":"owner","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes32"},{"name":"resolver","type":"address"}],"name":"setResolver","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes32"},{"name":"label","type":"bytes32"},{"name":"owner","type":"address"}],"name":"setSubnodeOwner","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes32"},{"name":"owner","type":"address"}],"name":"setOwner","outputs":[],"type":"function"}];
 var resolverInterface = [{"constant":true,"inputs":[{"name":"node","type":"bytes32"}],"name":"addr","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":true,"inputs":[{"name":"node","type":"bytes32"},{"name":"kind","type":"bytes32"}],"name":"has","outputs":[{"name":"","type":"bool"}],"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes32"},{"name":"addr","type":"address"}],"name":"setAddr","outputs":[],"type":"function"}];
+var publicRegistryAddress = "0x112234455c3a32fd11230c42e7bccd4a84e02010";
 
 function Resolver(web3, address, node, abi) {
     this.web3 = web3;
@@ -55,11 +56,11 @@ function Resolver(web3, address, node, abi) {
  * @license LGPL
  *
  * @param {object} web3 A web3 instance to use to communicate with the blockchain.
- * @param {address} address The address of the ENS registry.
+ * @param {address} address The address of the ENS registry. Defaults to the public ENS registry if not supplied.
  */
 function ENS (web3, address) {
     this.web3 = web3;
-    this.registry = web3.eth.contract(registryInterface).at(address);
+    this.registry = web3.eth.contract(registryInterface).at(address || publicRegistryAddress);
 }
 
 ENS.NameNotFound = Error("ENS name not found");

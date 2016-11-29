@@ -94,7 +94,7 @@ describe('ENS', function() {
 			ens.resolver('bar.eth', function(err, resolver) {
 				assert.equal(err, null, err);
 				resolver.addr(function(err, result) {
-					assert.equal(err.toString(), "Error: VM Exception while executing eth_call: invalid JUMP");
+					assert.ok(err.toString().indexOf('invalid JUMP') != -1, err);
 					done();
 				})
 			});

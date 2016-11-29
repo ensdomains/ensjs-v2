@@ -11,8 +11,27 @@
     You should have received a copy of the GNU Lesser General Public License
     along with ethereum-ens.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+var CryptoJS = require('crypto-js');
+var _ = require('underscore');
+
+var registryInterface = [{"constant":true,"inputs":[{"name":"node","type":"bytes32"}],"name":"resolver","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":true,"inputs":[{"name":"node","type":"bytes32"}],"name":"owner","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes32"},{"name":"resolver","type":"address"}],"name":"setResolver","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes32"},{"name":"label","type":"bytes32"},{"name":"owner","type":"address"}],"name":"setSubnodeOwner","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes32"},{"name":"owner","type":"address"}],"name":"setOwner","outputs":[],"type":"function"}];
+var resolverInterface = [{"constant":true,"inputs":[{"name":"node","type":"bytes32"}],"name":"addr","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":true,"inputs":[{"name":"node","type":"bytes32"},{"name":"kind","type":"bytes32"}],"name":"has","outputs":[{"name":"","type":"bool"}],"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes32"},{"name":"addr","type":"address"}],"name":"setAddr","outputs":[],"type":"function"}];
+
+function Resolver(web3, address, node, abi) {
+    this.web3 = web3;
+    this.resolverAddress = address;
+    this.node = node;
+    this.contract = web3.eth.contract(abi).at(address);
+
+    _.each(_.functions(this.contract), function(funcname) {
+        this[funcname] = _.partial(this.contract[funcname], this.node);
+    }.bind(this));
+}
+
 /** 
- * @file This package provides an easy-to-use interface to the Ethereum Name Service.
+ * Provides an easy-to-use interface to the Ethereum Name Service.
+ *
  * Example usage:
  *
  *     var ENS = require('ethereum-ens');
@@ -34,28 +53,7 @@
  * @author Nick Johnson <nick@ethereum.org>
  * @date 2016
  * @license LGPL
- */
-
-var CryptoJS = require('crypto-js');
-var _ = require('underscore');
-
-var registryInterface = [{"constant":true,"inputs":[{"name":"node","type":"bytes32"}],"name":"resolver","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":true,"inputs":[{"name":"node","type":"bytes32"}],"name":"owner","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes32"},{"name":"resolver","type":"address"}],"name":"setResolver","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes32"},{"name":"label","type":"bytes32"},{"name":"owner","type":"address"}],"name":"setSubnodeOwner","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes32"},{"name":"owner","type":"address"}],"name":"setOwner","outputs":[],"type":"function"}];
-var resolverInterface = [{"constant":true,"inputs":[{"name":"node","type":"bytes32"}],"name":"addr","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":true,"inputs":[{"name":"node","type":"bytes32"},{"name":"kind","type":"bytes32"}],"name":"has","outputs":[{"name":"","type":"bool"}],"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes32"},{"name":"addr","type":"address"}],"name":"setAddr","outputs":[],"type":"function"}];
-
-function Resolver(web3, address, node, abi) {
-    this.web3 = web3;
-    this.resolverAddress = address;
-    this.node = node;
-    this.contract = web3.eth.contract(abi).at(address);
-
-    _.each(_.functions(this.contract), function(funcname) {
-        this[funcname] = _.partial(this.contract[funcname], this.node);
-    }.bind(this));
-}
-
-/**
- * Constructs a new ENS instance.
- * @class
+ *
  * @param {object} web3 A web3 instance to use to communicate with the blockchain.
  * @param {address} address The address of the ENS registry.
  */

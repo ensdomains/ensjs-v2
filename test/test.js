@@ -17,7 +17,7 @@ var registryInterface = [{"constant":true,"inputs":[{"name":"node","type":"bytes
 
 describe('ENS', function() {
 	before(function(done) {
-		this.timeout(10000);
+		this.timeout(20000);
 		web3.setProvider(TestRPC.provider());
 		//web3.setProvider(new web3.providers.HttpProvider('http://localhost:8545'));
 
@@ -56,6 +56,11 @@ describe('ENS', function() {
 			assert.equal(ens.namehash(''), '0x0000000000000000000000000000000000000000000000000000000000000000');
 			assert.equal(ens.namehash('eth'), '0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae');
 			assert.equal(ens.namehash('foo.eth'), '0xde9b09fd7c5f901e23a3f19fecc54828e9c848539801e86591bd9801b019f84f');
+		});
+
+		it('should canonicalize with nameprep', function() {
+			var ens = new ENS(web3, ensRoot);
+			assert.equal(ens.namehash('name.eth'), ens.namehash('NAME.eth'));
 		})
 	})
 
@@ -132,7 +137,7 @@ describe('ENS', function() {
 
 	describe("#setSubnodeOwner", function() {
 		it('should permit setting subnode owners', function(done) {
-			ens.setSubnodeOwner('baz.bar.eth', accounts[0], {from: accounts[0]}, function(err, txid) {
+			ens.setSubnodeOwner('BAZ.bar.eth', accounts[0], {from: accounts[0]}, function(err, txid) {
 				assert.equal(err, null, err);
 				ens.owner('baz.bar.eth', function(err, owner) {
 					assert.equal(err, null, err);

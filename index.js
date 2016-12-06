@@ -13,6 +13,8 @@
 */
 
 var CryptoJS = require('crypto-js');
+var StringPrep = require('node-stringprep').StringPrep;
+var NamePrep = new StringPrep('nameprep');
 var _ = require('underscore');
 
 var registryInterface = [
@@ -252,6 +254,7 @@ function sha3(input) {
  * @returns The computed namehash, as a hex string.
  */
 function namehash(name) {
+    name = NamePrep.prepare(name);
     var node = CryptoJS.enc.Hex.parse('0000000000000000000000000000000000000000000000000000000000000000');
     if(name != '') {
         var labels = name.split(".");
@@ -266,9 +269,9 @@ ENS.prototype.namehash = namehash;
 function parentNamehash(name) {
     var dot = name.indexOf('.');
     if(dot == -1) {
-        return ['0x' + sha3(name), namehash('')];
+        return ['0x' + sha3(NamePrep.prepare(name)), namehash('')];
     } else {
-        return ['0x' + sha3(name.slice(0, dot)), namehash(name.slice(dot + 1))];
+        return ['0x' + sha3(NamePrep.prepare(name.slice(0, dot))), namehash(name.slice(dot + 1))];
     }
 }
 

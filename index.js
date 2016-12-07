@@ -120,12 +120,10 @@ ENS.prototype.resolver = function(name) {
     }
 
     var abi = resolverInterface;
-
-    var params = {};
-    if (callback && arguments.length==4){
-        params = arguments[arguments.length-2];
-    } else if (!callback && arguments.length==2){
-        params = arguments[arguments.length-1];
+    if(callback && arguments.length == 3) {
+        abi = arguments[arguments.length - 2];
+    } else if(!callback && arguments.length == 2) {
+        abi = arguments[arguments.length - 1];
     }
 
     if(!callback) {
@@ -169,10 +167,10 @@ ENS.prototype.setResolver = function(name, addr) {
     }
 
     var params = {};
-    if (callback && arguments.length==4){
-        params = arguments[arguments.length-2];
-    } else if (!callback && arguments.length==3){
-        params = arguments[arguments.length-1];
+    if(callback && arguments.length == 4){
+        params = arguments[arguments.length - 2];
+    } else if(!callback && arguments.length == 3){
+        params = arguments[arguments.length - 1];
     }
 
     if(!callback) {
@@ -219,10 +217,10 @@ ENS.prototype.setOwner = function(name, addr) {
     }
 
     var params = {};
-    if (callback && arguments.length==4){
-        params = arguments[arguments.length-2];
-    } else if (!callback && arguments.length==3){
-        params = arguments[arguments.length-1];
+    if(callback && arguments.length == 4) {
+        params = arguments[arguments.length - 2];
+    } else if(!callback && arguments.length == 3) {
+        params = arguments[arguments.length - 1];
     }
 
     if(!callback) {
@@ -253,10 +251,10 @@ ENS.prototype.setSubnodeOwner = function(name, addr) {
     }
 
     var params = {};
-    if (callback && arguments.length==4){
-        params = arguments[arguments.length-2];
-    } else if (!callback && arguments.length==3){
-        params = arguments[arguments.length-1];
+    if (callback && arguments.length == 4) {
+        params = arguments[arguments.length - 2];
+    } else if (!callback && arguments.length == 3) {
+        params = arguments[arguments.length - 1];
     }
 
     if(!callback) {

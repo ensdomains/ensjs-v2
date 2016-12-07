@@ -132,7 +132,7 @@ var resolverInterface = [
         "type": "bytes32"
       }
     ],
-    "name": "hash",
+    "name": "content",
     "outputs": [
       {
         "name": "",
@@ -190,7 +190,7 @@ var resolverInterface = [
         "type": "bytes32"
       }
     ],
-    "name": "setHash",
+    "name": "setContent",
     "outputs": [],
     "type": "function"
   }

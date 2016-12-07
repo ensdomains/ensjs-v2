@@ -299,8 +299,11 @@ ENS.prototype.resolver = function(name) {
     }
 
     var abi = resolverInterface;
-    if((callback && arguments.length == 4) || (!callback && arguments.length == 3))
-        resolverInterface = arguments[arguments.length - 2];
+    if(callback && arguments.length == 3) {
+        abi = arguments[arguments.length - 2];
+    } else if(!callback && arguments.length == 2) {
+        abi = arguments[arguments.length - 1];
+    }
 
     if(!callback) {
         result = this.registry.resolver(node);
@@ -343,8 +346,11 @@ ENS.prototype.setResolver = function(name, addr) {
     }
 
     var params = {};
-    if((callback && arguments.length == 4) || (!callback && arguments.length == 3))
+    if(callback && arguments.length == 4){
         params = arguments[arguments.length - 2];
+    } else if(!callback && arguments.length == 3){
+        params = arguments[arguments.length - 1];
+    }
 
     if(!callback) {
         return this.registry.setResolver(node, addr, params);
@@ -390,8 +396,11 @@ ENS.prototype.setOwner = function(name, addr) {
     }
 
     var params = {};
-    if((callback && arguments.length == 4) || (!callback && arguments.length == 3))
+    if(callback && arguments.length == 4) {
         params = arguments[arguments.length - 2];
+    } else if(!callback && arguments.length == 3) {
+        params = arguments[arguments.length - 1];
+    }
 
     if(!callback) {
         return this.registry.setOwner(node, addr, params);
@@ -421,8 +430,11 @@ ENS.prototype.setSubnodeOwner = function(name, addr) {
     }
 
     var params = {};
-    if((callback && arguments.length == 4) || (!callback && arguments.length == 3))
+    if (callback && arguments.length == 4) {
         params = arguments[arguments.length - 2];
+    } else if (!callback && arguments.length == 3) {
+        params = arguments[arguments.length - 1];
+    }
 
     if(!callback) {
         return this.registry.setSubnodeOwner(node[1], node[0], addr, params);

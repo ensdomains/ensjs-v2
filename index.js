@@ -256,7 +256,7 @@ function sha3(input) {
 function namehash(name) {
     name = NamePrep.prepare(name);
     var node = CryptoJS.enc.Hex.parse('0000000000000000000000000000000000000000000000000000000000000000');
-    if(name != '') {
+    if(name && name != '') {
         var labels = name.split(".");
         for(var i = labels.length - 1; i >= 0; i--) {
             node = sha3(node.concat(sha3(labels[i])));

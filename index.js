@@ -251,6 +251,11 @@ function sha3(input) {
     return CryptoJS.SHA3(input, {outputLength: 256})
 }
 
+/**
+ * normalise namepreps a name, throwing an exception if it contains invalid characters.
+ * @param {string} name The name to normalise
+ * @returns The normalised name. Throws ENS.InvalidName if the name contains invalid characters.
+ */
 function normalise(name) {
   name = NamePrep.prepare(name);
   if(invalidNameRegexp.test(name)) {

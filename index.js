@@ -198,6 +198,8 @@ var resolverInterface = [
 
 var publicRegistryAddress = "0x112234455c3a32fd11230c42e7bccd4a84e02010";
 
+var invalidNameRegexp = /[\0-,/:-`{-\x7f]/;
+
 function Resolver(web3, address, node, abi) {
     this.web3 = web3;
     this.resolverAddress = address;
@@ -243,10 +245,20 @@ function ENS (web3, address) {
 }
 
 ENS.NameNotFound = Error("ENS name not found");
+ENS.InvalidName = Error("Invalid ENS name")
 
 function sha3(input) {
     return CryptoJS.SHA3(input, {outputLength: 256})
 }
+
+function normalise(name) {
+  name = NamePrep.prepare(name);
+  if(invalidNameRegexp.test(name)) {
+    throw ENS.InvalidName;
+  }
+  return name;
+}
+ENS.prototype.normalise = normalise;
 
 /**
  * namehash implements ENS' name hash algorithm.
@@ -254,7 +266,7 @@ function sha3(input) {
  * @returns The computed namehash, as a hex string.
  */
 function namehash(name) {
-    name = NamePrep.prepare(name);
+    name = normalise(name);
     var node = CryptoJS.enc.Hex.parse('0000000000000000000000000000000000000000000000000000000000000000');
     if(name && name != '') {
         var labels = name.split(".");

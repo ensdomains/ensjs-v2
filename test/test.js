@@ -61,7 +61,17 @@ describe('ENS', function() {
 		it('should canonicalize with nameprep', function() {
 			var ens = new ENS(web3, ensRoot);
 			assert.equal(ens.namehash('name.eth'), ens.namehash('NAME.eth'));
-		})
+		});
+
+		it('should prohibit invalid names', function() {
+			var ens = new ENS(web3, ensRoot);
+			try {
+				ens.normalise('foo_!bar');
+				assert.fail("Expected exception");
+			} catch(e) {
+				assert.equal(ENS.InvalidName, e);
+			}
+		});
 	})
 
 	describe('#resolve()', function() {

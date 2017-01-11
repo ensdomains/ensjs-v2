@@ -13,8 +13,8 @@
 */
 
 var CryptoJS = require('crypto-js');
-var StringPrep = require('node-stringprep').StringPrep;
-var NamePrep = new StringPrep('nameprep');
+var stringprep = require('libidn').stringprep;
+var nameprep = stringprep.nameprep;
 var _ = require('underscore');
 
 var registryInterface = [
@@ -257,7 +257,7 @@ function sha3(input) {
  * @returns The normalised name. Throws ENS.InvalidName if the name contains invalid characters.
  */
 function normalise(name) {
-  name = NamePrep.prepare(name);
+  name = nameprep(name);
   if(invalidNameRegexp.test(name)) {
     throw ENS.InvalidName;
   }
@@ -286,9 +286,9 @@ ENS.prototype.namehash = namehash;
 function parentNamehash(name) {
     var dot = name.indexOf('.');
     if(dot == -1) {
-        return ['0x' + sha3(NamePrep.prepare(name)), namehash('')];
+        return ['0x' + sha3(normalise(name)), namehash('')];
     } else {
-        return ['0x' + sha3(NamePrep.prepare(name.slice(0, dot))), namehash(name.slice(dot + 1))];
+        return ['0x' + sha3(normalise(name.slice(0, dot))), namehash(name.slice(dot + 1))];
     }
 }
 

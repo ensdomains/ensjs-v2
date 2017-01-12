@@ -13,7 +13,7 @@
 */
 
 var CryptoJS = require('crypto-js');
-var stringprep = require('libidn').stringprep;
+var stringprep = require('stringprep').stringprep;
 var nameprep = stringprep.nameprep;
 var _ = require('underscore');
 

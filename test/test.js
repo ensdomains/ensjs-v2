@@ -69,7 +69,7 @@ describe('ENS', function() {
 				ens.normalise('foo_!bar');
 				assert.fail("Expected exception");
 			} catch(e) {
-				assert.equal(ENS.InvalidName, e);
+				assert.equal('Error: Illegal char _', e);
 			}
 		});
 	})

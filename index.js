@@ -13,8 +13,7 @@
 */
 
 var CryptoJS = require('crypto-js');
-var stringprep = require('stringprep').stringprep;
-var nameprep = stringprep.nameprep;
+var uts46 = require('idna-uts46');
 var _ = require('underscore');
 
 var registryInterface = [
@@ -198,8 +197,6 @@ var resolverInterface = [
 
 var publicRegistryAddress = "0x112234455c3a32fd11230c42e7bccd4a84e02010";
 
-var invalidNameRegexp = /[\0-,/:-`{-\x7f]/;
-
 function Resolver(web3, address, node, abi) {
     this.web3 = web3;
     this.resolverAddress = address;
@@ -245,7 +242,6 @@ function ENS (web3, address) {
 }
 
 ENS.NameNotFound = Error("ENS name not found");
-ENS.InvalidName = Error("Invalid ENS name")
 
 function sha3(input) {
     return CryptoJS.SHA3(input, {outputLength: 256})
@@ -257,11 +253,7 @@ function sha3(input) {
  * @returns The normalised name. Throws ENS.InvalidName if the name contains invalid characters.
  */
 function normalise(name) {
-  name = nameprep(name);
-  if(invalidNameRegexp.test(name)) {
-    throw ENS.InvalidName;
-  }
-  return name;
+  return uts46.toUnicode(name, {useStd3ASCII: true, transitional: false});
 }
 ENS.prototype.normalise = normalise;
 

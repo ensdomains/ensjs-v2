@@ -6,13 +6,19 @@ Provides an easy-to-use interface to the Ethereum Name Service.
 
 Example usage:
 
-    var ENS = require('ethereum-ens');
-    var Web3 = require('web3');
+```
+var ENS = require('ethereum-ens');
+var Web3 = require('web3');
 
-    var web3 = new Web3();
-    var ens = new ENS(web3, '0x1234abc...');
+var web3 = new Web3();
+var ens = new ENS(web3, '0x1234abc...');
 
-    var address = ens.resolver('foo.eth').addr();
+ens.resolver('foo.eth').addr(function (err, address) {
+  if (err) throw err;
+
+  console.log('The address is: ' + address)
+});
+```
 
 Throughout this module, the same optionally-asynchronous pattern as web3 is
 used: all functions that call web3 take a callback as an optional last
@@ -65,7 +71,7 @@ succeed.
 -   `options` **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** An optional dict of parameters to pass to web3.
 -   `callback` **[function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)** An optional callback; if specified, the
            function executes asynchronously.
--   `addr`  
+-   `addr`
 
 Returns **any** The transaction ID if callback is not supplied.
 
@@ -83,7 +89,7 @@ Returns **any** The resolved address if callback is not supplied.
 
 ## setOwner
 
-setOwner sets the owner of the specified name. Only the owner may call 
+setOwner sets the owner of the specified name. Only the owner may call
 setResolver or setSubnodeOwner. The calling account must be the current
 owner of the name in order for this call to succeed.
 
@@ -94,7 +100,7 @@ owner of the name in order for this call to succeed.
 -   `options` **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** An optional dict of parameters to pass to web3.
 -   `callback` **[function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)** An optional callback; if specified, the
            function executes asynchronously.
--   `addr`  
+-   `addr`
 
 Returns **any** The transaction ID if callback is not supplied.
 
@@ -112,7 +118,7 @@ the owner of 'bar.eth'.
 -   `options` **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** An optional dict of parameters to pass to web3.
 -   `callback` **[function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)** An optional callback; if specified, the
            function executes asynchronously.
--   `addr`  
+-   `addr`
 
 Returns **any** The transaction ID if callback is not supplied.
 

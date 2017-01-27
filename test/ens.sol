@@ -82,6 +82,7 @@ contract ENS {
 
 contract Resolver {
     event AddrChanged(bytes32 indexed node, address a);
+    event NameChanged(bytes32 indexed node, string name);
 
     function has(bytes32 node, bytes32 kind) returns (bool);
     function addr(bytes32 node) constant returns (address ret);
@@ -94,7 +95,7 @@ contract Resolver {
 contract PublicResolver is Resolver {
     ENS ens;
     mapping(bytes32=>address) addresses;
-    mapping(bytes32=>bytes32) contents;
+    mapping(bytes32=>string) names;
     
     modifier only_owner(bytes32 node) {
         if(ens.owner(node) != msg.sender) throw;
@@ -148,6 +149,88 @@ contract PublicResolver is Resolver {
         addresses[node] = addr;
         AddrChanged(node, addr);
     }
+
+    /**
+     * Returns the name associated with an ENS node.
+     * @param node The ENS node to query.
+     * @return The associated name.
+     */
+    function name(bytes32 node) constant returns (string ret) {
+        ret = names[node];
+        if(bytes(ret).length == 0)
+            throw;
+        return ret;
+    }
+
+    /**
+     * Sets the name associated with an ENS node.
+     * May only be called by the owner of that node in the ENS registry.
+     * @param node The node to update.
+     * @param name The name to set.
+     */
+    function setName(bytes32 node, string name) only_owner(node) {
+        names[node] = name;
+        NameChanged(node, name);
+    }
+}
+
+contract ReverseRegistrar {
+    ENS public ens;
+    bytes32 public rootNode;
+    
+    /**
+     * @dev Constructor
+     * @param ensAddr The address of the ENS registry.
+     * @param node The node hash that this registrar governs.
+     */
+    function ReverseRegistrar(address ensAddr, bytes32 node) {
+        ens = ENS(ensAddr);
+        rootNode = node;
+    }
+
+    /**
+     * @dev Transfers ownership of the reverse ENS record associated with the
+     *      calling account.
+     * @param owner The address to set as the owner of the reverse record in ENS.
+     * @return The ENS node hash of the reverse record.
+     */
+    function claim(address owner) returns (bytes32 node) {
+        var label = sha3HexAddress(msg.sender);
+        ens.setSubnodeOwner(rootNode, label, owner);
+        return sha3(rootNode, label);
+    }
+
+    /**
+     * @dev Returns the node hash for a given account's reverse records.
+     * @param addr The address to hash
+     * @return The ENS node hash.
+     */
+    function node(address addr) constant returns (bytes32 ret) {
+        return sha3(rootNode, sha3HexAddress(addr));
+    }
+
+    /**
+     * @dev An optimised function to compute the sha3 of the lower-case
+     *      hexadecimal representation of an Ethereum address.
+     * @param addr The address to hash
+     * @return The SHA3 hash of the lower-case hexadecimal encoding of the
+     *         input address.
+     */
+    function sha3HexAddress(address addr) private returns (bytes32 ret) {
+        assembly {
+            let lookup := 0x3031323334353637383961626364656600000000000000000000000000000000
+            let i := 40
+        loop:
+            i := sub(i, 1)
+            mstore8(i, byte(and(addr, 0xf), lookup))
+            addr := div(addr, 0x10)
+            i := sub(i, 1)
+            mstore8(i, byte(and(addr, 0xf), lookup))
+            addr := div(addr, 0x10)
+            jumpi(loop, i)
+            ret := sha3(0, 40)
+        }
+    }
 }
 
 contract DeployENS {
@@ -158,6 +241,17 @@ contract DeployENS {
         var tldnode = sha3(bytes32(0), tld);
         ens = new ENS(this);
         var resolver = new PublicResolver(ens);
+
+        // Set addr.reverse up with the reverse registrar
+        var reversenode = sha3(bytes32(0), sha3('reverse'));
+        var reverseregistrar = new ReverseRegistrar(ens, sha3(reversenode, sha3('addr')));
+        ens.setSubnodeOwner(0, sha3('reverse'), this);
+        ens.setSubnodeOwner(reversenode, sha3('addr'), reverseregistrar);
+
+        // Set up the reverse record for ourselves
+        var ournode = reverseregistrar.claim(address(this));
+        ens.setResolver(ournode, resolver);
+        resolver.setName(ournode, "deployer.eth");
         
         // Set foo.eth up with a resolver and an addr record
         ens.setSubnodeOwner(0, tld, this);

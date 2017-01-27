@@ -12,6 +12,7 @@ var web3 = new Web3();
 var ens = null;
 var ensRoot = null;
 var accounts = null;
+var deployens = null;
 
 var registryInterface = [{"constant":true,"inputs":[{"name":"node","type":"bytes32"}],"name":"resolver","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":true,"inputs":[{"name":"node","type":"bytes32"}],"name":"owner","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes32"},{"name":"resolver","type":"address"}],"name":"setResolver","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes32"},{"name":"label","type":"bytes32"},{"name":"owner","type":"address"}],"name":"setSubnodeOwner","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes32"},{"name":"owner","type":"address"}],"name":"setOwner","outputs":[],"type":"function"}];
 
@@ -26,11 +27,12 @@ describe('ENS', function() {
 
 			var source = fs.readFileSync('test/ens.sol').toString();
 			var compiled = solc.compile(source, 1);
+			assert.equal(compiled.errors, undefined);
 			var deployer = compiled.contracts['DeployENS'];
 			var deployensContract = web3.eth.contract(JSON.parse(deployer.interface));
 			
 			// Deploy the contract
-			deployensContract.new(
+			deployens = deployensContract.new(
 			   {
 			     from: accounts[0],
 			     data: deployer.bytecode,
@@ -138,7 +140,7 @@ describe('ENS', function() {
 	});
 
 	describe('#owner()', function() {
-		it('should return owner vaules', function(done) {
+		it('should return owner values', function(done) {
 			ens.owner('bar.eth', function(err, result) {
 				done();
 			});
@@ -179,6 +181,19 @@ describe('ENS', function() {
 				assert.equal(err, null, err);
 				ens.owner('baz.bar.eth', function(err, owner) {
 					assert.equal(owner, addr);
+					done();
+				});
+			});
+		});
+	});
+
+	describe("#reverse", function() {
+		it('should look up reverse DNS records', function(done) {
+			ens.reverse(deployens.address, function(err, resolver) {
+				assert.equal(err, null, err);
+				resolver.name(function(err, result) {
+					assert.equal(err, null, err);
+					assert.equal(result, 'deployer.eth');
 					done();
 				});
 			});

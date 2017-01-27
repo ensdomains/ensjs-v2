@@ -10,7 +10,7 @@ Example usage:
     var Web3 = require('web3');
 
     var web3 = new Web3();
-    var ens = new ENS(web3, '0x1234abc...');
+    var ens = new ENS(web3);
 
     var address = ens.resolver('foo.eth').addr();
 
@@ -25,7 +25,7 @@ this has the same parameters as web3.
 **Parameters**
 
 -   `web3` **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** A web3 instance to use to communicate with the blockchain.
--   `address` **address** The address of the ENS registry.
+-   `address` **address** The address of the ENS registry. Defaults to the public ENS registry if not supplied.
 
 **Meta**
 
@@ -45,8 +45,28 @@ you only have to call `addr()`.
 
 -   `name` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** The name to look up.
 -   `abi` **list** Optional. The JSON ABI definition to use for the resolver.
-           if none is supplied, a default definition implementing `has`, `addr`
-           and `setAddr` is supplied.
+           if none is supplied, a default definition implementing `has`, `addr`, `name`,
+           `setName` and `setAddr` is supplied.
+-   `callback` **[function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)** Optional. If specified, the function executes
+           asynchronously.
+
+Returns **any** The resolver object if callback is not supplied.
+
+## reverse
+
+reverse returns a resolver object for the reverse resolution of the specified address,
+throwing ENS.NameNotFound if the reverse record does not exist in ENS.
+Resolver objects are wrappers around web3 contract objects, with the
+first argument - always the node ID in an ENS resolver - automatically
+supplied. So, to call the `addr(node)` function on a standard resolver,
+you only have to call `addr()`.
+
+**Parameters**
+
+-   `address` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** The address to look up.
+-   `abi` **list** Optional. The JSON ABI definition to use for the resolver.
+           if none is supplied, a default definition implementing `has`, `addr`, `name`,
+           `setName` and `setAddr` is supplied.
 -   `callback` **[function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)** Optional. If specified, the function executes
            asynchronously.
 
@@ -115,6 +135,16 @@ the owner of 'bar.eth'.
 -   `addr`  
 
 Returns **any** The transaction ID if callback is not supplied.
+
+# normalise
+
+normalise namepreps a name, throwing an exception if it contains invalid characters.
+
+**Parameters**
+
+-   `name` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** The name to normalise
+
+Returns **any** The normalised name. Throws ENS.InvalidName if the name contains invalid characters.
 
 # namehash
 

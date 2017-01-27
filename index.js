@@ -146,6 +146,23 @@ var resolverInterface = [
       {
         "name": "node",
         "type": "bytes32"
+      }
+    ],
+    "name": "name",
+    "outputs": [
+      {
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "node",
+        "type": "bytes32"
       },
       {
         "name": "kind",
@@ -190,6 +207,22 @@ var resolverInterface = [
       }
     ],
     "name": "setContent",
+    "outputs": [],
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "node",
+        "type": "bytes32"
+      },
+      {
+        "name": "name",
+        "type": "string"
+      }
+    ],
+    "name": "setName",
     "outputs": [],
     "type": "function"
   }
@@ -284,34 +317,17 @@ function parentNamehash(name) {
     }
 }
 
-/**
- * resolver returns a resolver object for the specified name, throwing
- * ENS.NameNotFound if the name does not exist in ENS.
- * Resolver objects are wrappers around web3 contract objects, with the
- * first argument - always the node ID in an ENS resolver - automatically
- * supplied. So, to call the `addr(node)` function on a standard resolver,
- * you only have to call `addr()`.
- * @param {string} name The name to look up.
- * @param {list} abi Optional. The JSON ABI definition to use for the resolver.
- *        if none is supplied, a default definition implementing `has`, `addr`
- *        and `setAddr` is supplied.
- * @param {function} callback Optional. If specified, the function executes
- *        asynchronously.
- * @returns The resolver object if callback is not supplied.
- */
-ENS.prototype.resolver = function(name) {
-    var node = namehash(name);
-
+ENS.prototype._resolve = function(node, args) {
     var callback = undefined;
-    if(typeof arguments[arguments.length - 1] == 'function') {
-        callback = arguments[arguments.length - 1];
+    if(typeof args[args.length - 1] == 'function') {
+        callback = args[args.length - 1];
     }
 
     var abi = resolverInterface;
-    if(callback && arguments.length == 3) {
-        abi = arguments[arguments.length - 2];
-    } else if(!callback && arguments.length == 2) {
-        abi = arguments[arguments.length - 1];
+    if(callback && args.length == 3) {
+        abi = args[args.length - 2];
+    } else if(!callback && args.length == 2) {
+        abi = args[args.length - 1];
     }
 
     if(!callback) {
@@ -333,6 +349,48 @@ ENS.prototype.resolver = function(name) {
             }
         }
     }.bind(this));
+}
+
+/**
+ * resolver returns a resolver object for the specified name, throwing
+ * ENS.NameNotFound if the name does not exist in ENS.
+ * Resolver objects are wrappers around web3 contract objects, with the
+ * first argument - always the node ID in an ENS resolver - automatically
+ * supplied. So, to call the `addr(node)` function on a standard resolver,
+ * you only have to call `addr()`.
+ * @param {string} name The name to look up.
+ * @param {list} abi Optional. The JSON ABI definition to use for the resolver.
+ *        if none is supplied, a default definition implementing `has`, `addr`, `name`,
+ *        `setName` and `setAddr` is supplied.
+ * @param {function} callback Optional. If specified, the function executes
+ *        asynchronously.
+ * @returns The resolver object if callback is not supplied.
+ */
+ENS.prototype.resolver = function(name) {
+    var node = namehash(name);
+    return this._resolve(node, arguments)
+};
+
+/**
+ * reverse returns a resolver object for the reverse resolution of the specified address,
+ * throwing ENS.NameNotFound if the reverse record does not exist in ENS.
+ * Resolver objects are wrappers around web3 contract objects, with the
+ * first argument - always the node ID in an ENS resolver - automatically
+ * supplied. So, to call the `addr(node)` function on a standard resolver,
+ * you only have to call `addr()`.
+ * @param {string} address The address to look up.
+ * @param {list} abi Optional. The JSON ABI definition to use for the resolver.
+ *        if none is supplied, a default definition implementing `has`, `addr`, `name`,
+ *        `setName` and `setAddr` is supplied.
+ * @param {function} callback Optional. If specified, the function executes
+ *        asynchronously.
+ * @returns The resolver object if callback is not supplied.
+ */
+ENS.prototype.reverse = function(address) {
+    if(address.startsWith("0x"))
+      address = address.slice(2);
+    var node = namehash(address + ".addr.reverse");
+    return this._resolve(node, arguments);
 };
 
 /**

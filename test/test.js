@@ -28,7 +28,7 @@ describe('ENS', function() {
 			var source = fs.readFileSync('test/ens.sol').toString();
 			var compiled = solc.compile(source, 1);
 			assert.equal(compiled.errors, undefined);
-			var deployer = compiled.contracts['DeployENS'];
+			var deployer = compiled.contracts[':DeployENS'];
 			var deployensContract = web3.eth.contract(JSON.parse(deployer.interface));
 			
 			// Deploy the contract
@@ -82,7 +82,7 @@ describe('ENS', function() {
 				assert.equal(err, null, "Got error from ens.resolver(): " + err);
 				assert.notEqual(resolver.resolverAddress, '0x0000000000000000000000000000000000000000');
 				resolver.addr(function(err, result) {
-					assert.equal(result, '0x00000000000000000000000000deadbeefc0ffee');
+					assert.equal(result, deployens.address);
 					done();
 				});
 			});
@@ -118,7 +118,7 @@ describe('ENS', function() {
 		});
 
 		it('should error when the name does not exist', function(done) {
-			ens.resolver('baz.eth', function(err, resolver) {
+			ens.resolver('quux.eth', function(err, resolver) {
 				assert.equal(err, ENS.NameNotFound);
 				done();
 			});
@@ -134,6 +134,55 @@ describe('ENS', function() {
 						assert.equal(result, '0x0000000000000000000000000000000000012345');
 						done();
 					})
+				});
+			});
+		});
+
+		it('should do reverse resolution', function(done) {
+			ens.resolver('foo.eth', function(err, resolver) {
+				assert.equal(err, null, err);
+				resolver.reverseAddr(function(err, reverse) {
+					assert.equal(err, null, err);
+					reverse.name(function(err, result) {
+						assert.equal(err, null, err);
+						assert.equal(result, "deployer.eth");
+						done();
+					});
+				});
+			});
+		});
+
+		it('should fetch ABIs from names', function(done) {
+			ens.resolver('foo.eth', function(err, resolver) {
+				assert.equal(err, null, err);
+				resolver.abi(function(err, abi) {
+					assert.equal(err, null, err);
+					assert.equal(abi.length, 2);
+					assert.equal(abi[0].name, "test2");
+					done();
+				});
+			});
+		});
+
+		it('should fetch ABIs from reverse records', function(done) {
+			ens.resolver('baz.eth', function(err, resolver) {
+				assert.equal(err, null, err);
+				resolver.abi(function(err, abi) {
+					assert.equal(err, null, err);
+					assert.equal(abi.length, 2);
+					assert.equal(abi[0].name, "test");
+					done();
+				});
+			});
+		});
+
+		it('should fetch contract instances', function(done) {
+			ens.resolver('baz.eth', function(err, resolver) {
+				assert.equal(err, null, err);
+				resolver.contract(function(err, contract) {
+					assert.equal(err, null, err);
+					assert.ok(contract.test != undefined);
+					done();
 				});
 			});
 		});

@@ -13,8 +13,11 @@
 */
 
 var CryptoJS = require('crypto-js');
+var pako = require('pako');
 var uts46 = require('idna-uts46');
 var _ = require('underscore');
+var textEncoding = require('text-encoding');
+var TextDecoder = textEncoding.TextDecoder;
 
 var registryInterface = [
   {
@@ -225,24 +228,184 @@ var resolverInterface = [
     "name": "setName",
     "outputs": [],
     "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "node",
+        "type": "bytes32"
+      },
+      {
+        "name": "contentType",
+        "type": "uint256"
+      }
+    ],
+    "name": "ABI",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "payable": false,
+    "type": "function"
   }
 ];
 
 var publicRegistryAddress = "0x112234455c3a32fd11230c42e7bccd4a84e02010";
 
-function Resolver(web3, address, node, abi) {
-    this.web3 = web3;
+/**
+ * @class
+ */
+function Resolver(ens, address, node, abi) {
+    this.ens = ens;
     this.resolverAddress = address;
     this.node = node;
-    this.contract = web3.eth.contract(abi).at(address);
+    this.instance = ens.web3.eth.contract(abi).at(address);
 
-    _.each(_.functions(this.contract), function(funcname) {
-        this[funcname] = _.partial(this.contract[funcname], this.node);
+    _.each(_.functions(this.instance), function(funcname) {
+        if(funcname == "abi") return;
+        this[funcname] = _.partial(this.instance[funcname], this.node);
     }.bind(this));
 }
 
+var abiDecoders = {
+  1: function(data) {
+    data  = new TextDecoder("utf-8").decode(data);
+    return JSON.parse(data);
+  },
+  2: function(data) {
+    data = pako.inflate(data, {to: 'string'});
+    return JSON.parse(data);
+  }
+};
+var supportedDecoders = _.reduce(_.keys(abiDecoders), function(memo, val) { return memo | val; });
+
+/**
+ * reverseAddr looks up the reverse record for the address returned by the resolver's addr()
+ * @param callback An optional callback, for asynchronous operation.
+ * @returns In synchronous operation, the Resolver for the reverse record.
+ */
+Resolver.prototype.reverseAddr = function(callback) {
+  if(callback == undefined) {
+    return this.ens.reverse(this.addr());
+  } else {
+    this.addr(function(err, addr) {
+      if(err != undefined) {
+        callback(err, undefined);
+        return;
+      }
+      this.ens.reverse(addr, callback);
+    }.bind(this));
+  }
+}
+
+function fromHex(x) {
+  if(x.startsWith("0x")) {
+    x = x.slice(2);
+  }
+  
+  var ret = new Uint8Array(x.length / 2);
+  for(var i = 0; i < ret.length; i++) {
+    ret[i] = parseInt(x.slice(i * 2, i * 2 + 2), 16);
+  }
+
+  return ret;
+};
+
+/**
+ * abi returns the ABI associated with the name. Automatically looks for an ABI on the
+ *     reverse record if none is found on the name itself.
+ * @param callback An optional callback, for asynchronous operation.
+ * @returns {object} In synchronous operation, the contract ABI.
+ */
+Resolver.prototype.abi = function(callback) {
+  if(callback == undefined) {
+    var result = this.instance.ABI(this.node, supportedDecoders);
+    if(result[0] == 0) {
+      reverse = this.reverseAddr();
+      result = reverse.instance.ABI(reverse.node, supportedDecoders);
+    }
+
+    if(result[0] == 0) {
+      return null;
+    } else {
+      return abiDecoders[result[0]](fromHex(result[1]));
+    }
+  } else {
+    this.instance.ABI(this.node, supportedDecoders, function(err, result) {
+      if(err != undefined) {
+        callback(err, undefined);
+        return;
+      }
+
+      if(result[0] == 0) {
+        this.reverseAddr(function(err, reverse) {
+          if(err != undefined) {
+            callback(err, undefined);
+            return;
+          }
+
+          reverse.instance.ABI(reverse.node, supportedDecoders, function(err, result) {
+            if(err != undefined) {
+              callback(err, undefined);
+              return;
+            }
+
+            if(result[0] == 0) {
+              callback(undefined, null);
+              return;
+            }
+
+            callback(undefined, abiDecoders[result[0]](fromHex(result[1])));
+          }.bind(this));
+        }.bind(this));
+      } else {
+        callback(undefined, abiDecoders[result[0]](fromHex(result[1])));
+      }
+    }.bind(this));
+  }
+};
+
+/**
+ * contract returns a web3 contract object. The address is that returned by this resolver's
+ * `addr()`, and the ABI is loaded from this resolver's `ABI()` method, or the ABI on the
+ * reverse record if that's not found. Returns null if no address is specified or no ABI
+ * was found.
+ * @param callback An optional callback, for asynchronous operation.
+ * @returns {object} In synchronous operation, the contract instance.
+ */
+Resolver.prototype.contract = function(callback) {
+  if(callback == undefined) {
+    return this.ens.web3.eth.contract(this.abi()).at(this.addr());
+  } else {
+    this.abi(function(err, abi) {
+      if(err != undefined) {
+        callback(err, undefined);
+        return;
+      }
+
+      this.addr(function(err, addr) {
+        if(err != undefined) {
+          callback(err, undefined);
+          return;
+        }
+
+        callback(undefined, this.ens.web3.eth.contract(abi).at(addr));
+      }.bind(this));
+    }.bind(this));
+  }
+};
+
 /** 
- * Provides an easy-to-use interface to the Ethereum Name Service.
+ * @class
+ *
+ * @description Provides an easy-to-use interface to the Ethereum Name Service.
  *
  * Example usage:
  *
@@ -335,7 +498,7 @@ ENS.prototype._resolve = function(node, args) {
         if(result == "0x0000000000000000000000000000000000000000") {
             throw ENS.NameNotFound;
         }
-        return new Resolver(this.web3, result, node, abi);
+        return new Resolver(this, result, node, abi);
     }
 
     this.registry.resolver(node, function(err, result) {
@@ -345,7 +508,7 @@ ENS.prototype._resolve = function(node, args) {
             if(result == "0x0000000000000000000000000000000000000000") {
                 callback(ENS.NameNotFound, null);
             } else {
-                callback(null, new Resolver(this.web3, result, node, abi));
+                callback(null, new Resolver(this, result, node, abi));
             }
         }
     }.bind(this));

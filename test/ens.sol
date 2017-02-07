@@ -1,3 +1,5 @@
+pragma solidity ^0.4.9;
+
 /**
  * The ENS registry contract.
  */
@@ -21,7 +23,7 @@ contract ENS {
     // Permits modifications only by the owner of the specified node.
     modifier only_owner(bytes32 node) {
         if(records[node].owner != msg.sender) throw;
-        _
+        _;
     }
     
     /**
@@ -94,12 +96,19 @@ contract Resolver {
  */
 contract PublicResolver is Resolver {
     ENS ens;
+
+    struct Reverse {
+        uint256 contentType;
+        bytes data;
+    }
+
     mapping(bytes32=>address) addresses;
     mapping(bytes32=>string) names;
+    mapping(bytes32=>Reverse) reverses;
     
     modifier only_owner(bytes32 node) {
         if(ens.owner(node) != msg.sender) throw;
-        _
+        _;
     }
 
     /**
@@ -171,6 +180,17 @@ contract PublicResolver is Resolver {
     function setName(bytes32 node, string name) only_owner(node) {
         names[node] = name;
         NameChanged(node, name);
+    }
+
+    function ABI(bytes32 node, uint256 contentType) constant returns (uint256, bytes) {
+        var record = reverses[node];
+        if((record.contentType & contentType) == 0)
+            return (0, "");
+        return (record.contentType, record.data);
+    }
+
+    function setABI(bytes32 node, uint256 contentType, bytes data) only_owner(node) {
+        reverses[node] = Reverse(contentType, data);
     }
 }
 
@@ -252,18 +272,26 @@ contract DeployENS {
         var ournode = reverseregistrar.claim(address(this));
         ens.setResolver(ournode, resolver);
         resolver.setName(ournode, "deployer.eth");
+        resolver.setABI(ournode, 2, hex"789c754e390ac33010fccbd4aa0249a1af98141b2183c0590969b630c27f8f6c12838b74c3dc5347c8da284a78568b0e498bb1c14f4f079577840763231cb2f12bf59f3258ae65479694b7fb03db881559e5b50c7696a5c5d3329b06a6acd85cbfccfcf11fcfaa05e63a6a3f5f113a4a");
         
-        // Set foo.eth up with a resolver and an addr record
+        // Set foo.eth up with a resolver, ABI, and addr record
         ens.setSubnodeOwner(0, tld, this);
         ens.setSubnodeOwner(tldnode, sha3('foo'), this);
         var fooDotEth = sha3(tldnode, sha3('foo'));
         ens.setResolver(fooDotEth, resolver);
-        resolver.setAddr(fooDotEth, 0xDEADBEEFC0FFEE);
+        resolver.setAddr(fooDotEth, this);
+        resolver.setABI(fooDotEth, 1, '[{"constant":true,"inputs":[],"name":"test2","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"inputs":[],"payable":false,"type":"constructor"}]');
         
         // Set bar.eth up with a resolver but no addr record, owned by the sender
         ens.setSubnodeOwner(tldnode, sha3('bar'), this);
         var barDotEth = sha3(tldnode, sha3('bar'));
         ens.setResolver(barDotEth, resolver);
         ens.setOwner(barDotEth, msg.sender);
+
+        // Set up baz.eth with a resolver and addr record
+        ens.setSubnodeOwner(tldnode, sha3('baz'), this);
+        var bazDotEth = sha3(tldnode, sha3('baz'));
+        ens.setResolver(bazDotEth, resolver);
+        resolver.setAddr(bazDotEth, this);
     }
 }

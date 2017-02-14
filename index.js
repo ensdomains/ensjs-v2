@@ -14,10 +14,11 @@
 
 var CryptoJS = require('crypto-js');
 var pako = require('pako');
-var uts46 = require('idna-uts46');
-var _ = require('underscore');
+var Promise = require('bluebird');
 var textEncoding = require('text-encoding');
 var TextDecoder = textEncoding.TextDecoder;
+var uts46 = require('idna-uts46');
+var _ = require('underscore');
 
 var registryInterface = [
   {
@@ -262,15 +263,23 @@ var publicRegistryAddress = "0x112234455c3a32fd11230c42e7bccd4a84e02010";
 /**
  * @class
  */
-function Resolver(ens, address, node, abi) {
+function Resolver(ens, node, contract) {
     this.ens = ens;
-    this.resolverAddress = address;
     this.node = node;
-    this.instance = ens.web3.eth.contract(abi).at(address);
-
-    _.each(_.functions(this.instance), function(funcname) {
-        if(funcname == "abi") return;
-        this[funcname] = _.partial(this.instance[funcname], this.node);
+    this.instancePromise = ens.registry.resolverAsync(node).then(function(address) {
+      if(address == "0x0000000000000000000000000000000000000000") {
+        return Promise.reject(ENS.NameNotFound);
+      }
+      return Promise.promisifyAll(contract.at(address));
+    });
+    
+    _.each(contract.abi, function(signature) {
+        this[signature.name] = function() {
+          var args = arguments;
+          return this.instancePromise.then(function(instance) {
+            return _.partial(instance[signature.name + 'Async'], node).apply(instance, args);
+          }).bind(this);
+        }.bind(this);
     }.bind(this));
 }
 
@@ -287,22 +296,23 @@ var abiDecoders = {
 var supportedDecoders = _.reduce(_.keys(abiDecoders), function(memo, val) { return memo | val; });
 
 /**
- * reverseAddr looks up the reverse record for the address returned by the resolver's addr()
- * @param callback An optional callback, for asynchronous operation.
- * @returns In synchronous operation, the Resolver for the reverse record.
+ * resolverAddress returns the address of the resolver.
+ * @returns A promise for the address of the resolver.
  */
-Resolver.prototype.reverseAddr = function(callback) {
-  if(callback == undefined) {
-    return this.ens.reverse(this.addr());
-  } else {
-    this.addr(function(err, addr) {
-      if(err != undefined) {
-        callback(err, undefined);
-        return;
-      }
-      this.ens.reverse(addr, callback);
-    }.bind(this));
-  }
+Resolver.prototype.resolverAddress = function() {
+  return this.instancePromise.then(function(instance) {
+    return instance.address;
+  });
+}
+
+/**
+ * reverseAddr looks up the reverse record for the address returned by the resolver's addr()
+ * @returns A promise for the Resolver for the reverse record.
+ */
+Resolver.prototype.reverseAddr = function() {
+    return this.addr().then(function(addr) {
+      return this.ens.reverse(addr);
+    }).bind(this);
 }
 
 function fromHex(x) {
@@ -321,85 +331,35 @@ function fromHex(x) {
 /**
  * abi returns the ABI associated with the name. Automatically looks for an ABI on the
  *     reverse record if none is found on the name itself.
- * @param callback An optional callback, for asynchronous operation.
- * @returns {object} In synchronous operation, the contract ABI.
+ * @param {bool} Optional. If false, do not look up the ABI on the reverse entry.
+ * @returns {object} A promise for the contract ABI.
  */
-Resolver.prototype.abi = function(callback) {
-  if(callback == undefined) {
-    var result = this.instance.ABI(this.node, supportedDecoders);
-    if(result[0] == 0) {
-      reverse = this.reverseAddr();
-      result = reverse.instance.ABI(reverse.node, supportedDecoders);
-    }
-
-    if(result[0] == 0) {
-      return null;
-    } else {
-      return abiDecoders[result[0]](fromHex(result[1]));
-    }
-  } else {
-    this.instance.ABI(this.node, supportedDecoders, function(err, result) {
-      if(err != undefined) {
-        callback(err, undefined);
-        return;
-      }
-
+Resolver.prototype.abi = function(reverse) {
+  return this.instancePromise.then(function(instance) {
+    return instance.ABIAsync(this.node, supportedDecoders).then(function(result) {
       if(result[0] == 0) {
-        this.reverseAddr(function(err, reverse) {
-          if(err != undefined) {
-            callback(err, undefined);
-            return;
-          }
-
-          reverse.instance.ABI(reverse.node, supportedDecoders, function(err, result) {
-            if(err != undefined) {
-              callback(err, undefined);
-              return;
-            }
-
-            if(result[0] == 0) {
-              callback(undefined, null);
-              return;
-            }
-
-            callback(undefined, abiDecoders[result[0]](fromHex(result[1])));
-          }.bind(this));
-        }.bind(this));
+        if(reverse == false) return null;
+        return this.reverseAddr().then(function(reverse) {
+          return reverse.abi(false);
+        });
       } else {
-        callback(undefined, abiDecoders[result[0]](fromHex(result[1])));
+        return abiDecoders[result[0]](fromHex(result[1]));
       }
     }.bind(this));
-  }
+  }.bind(this));
 };
 
 /**
  * contract returns a web3 contract object. The address is that returned by this resolver's
  * `addr()`, and the ABI is loaded from this resolver's `ABI()` method, or the ABI on the
  * reverse record if that's not found. Returns null if no address is specified or no ABI
- * was found.
- * @param callback An optional callback, for asynchronous operation.
- * @returns {object} In synchronous operation, the contract instance.
+ * was found. The returned contract object will not be promisifed or otherwise modified.
+ * @returns {object} A promise for the contract instance.
  */
-Resolver.prototype.contract = function(callback) {
-  if(callback == undefined) {
-    return this.ens.web3.eth.contract(this.abi()).at(this.addr());
-  } else {
-    this.abi(function(err, abi) {
-      if(err != undefined) {
-        callback(err, undefined);
-        return;
-      }
-
-      this.addr(function(err, addr) {
-        if(err != undefined) {
-          callback(err, undefined);
-          return;
-        }
-
-        callback(undefined, this.ens.web3.eth.contract(abi).at(addr));
-      }.bind(this));
-    }.bind(this));
-  }
+Resolver.prototype.contract = function() {
+  return Promise.join(this.abi(), this.addr(), function(abi, addr) {
+    return this.ens.web3.eth.contract(abi).at(addr);
+  }.bind(this));
 };
 
 /** 
@@ -415,12 +375,16 @@ Resolver.prototype.contract = function(callback) {
  *     var web3 = new Web3();
  *     var ens = new ENS(web3);
  *
- *     var address = ens.resolver('foo.eth').addr();
+ *     var address = ens.resolver('foo.eth').addr().then(function(addr) { ... });
  *
- * Throughout this module, the same optionally-asynchronous pattern as web3 is
- * used: all functions that call web3 take a callback as an optional last
- * argument; if supplied, the function returns nothing, but instead calls the
- * callback with (err, result) when the operation completes.
+ * Functions that require communicating with the node return promises, rather than
+ * using callbacks. A promise has a `then` function, which takes a callback and will
+ * call it when the promise is fulfilled; `then` returns another promise, so you can
+ * chain callbacks. For more details, see http://bluebirdjs.com/.
+ *
+ * Notably, the `resolver` method returns a resolver instance immediately; lookup of
+ * the resolver address is done in the background or when you first call an asynchronous
+ * method on the resolver.
  *
  * Functions that create transactions also take an optional 'options' argument;
  * this has the same parameters as web3.
@@ -430,11 +394,11 @@ Resolver.prototype.contract = function(callback) {
  * @license LGPL
  *
  * @param {object} web3 A web3 instance to use to communicate with the blockchain.
- * @param {address} address The address of the ENS registry. Defaults to the public ENS registry if not supplied.
+ * @param {address} address Optional. The address of the ENS registry. Defaults to the public ENS registry.
  */
 function ENS (web3, address) {
-    this.web3 = web3;
-    this.registry = web3.eth.contract(registryInterface).at(address || publicRegistryAddress);
+    this.web3 = Promise.promisifyAll(web3);
+    this.registry = Promise.promisifyAll(web3.eth.contract(registryInterface).at(address || publicRegistryAddress));
 }
 
 ENS.NameNotFound = Error("ENS name not found");
@@ -480,58 +444,24 @@ function parentNamehash(name) {
     }
 }
 
-ENS.prototype._resolve = function(node, args) {
-    var callback = undefined;
-    if(typeof args[args.length - 1] == 'function') {
-        callback = args[args.length - 1];
-    }
-
-    var abi = resolverInterface;
-    if(callback && args.length == 3) {
-        abi = args[args.length - 2];
-    } else if(!callback && args.length == 2) {
-        abi = args[args.length - 1];
-    }
-
-    if(!callback) {
-        result = this.registry.resolver(node);
-        if(result == "0x0000000000000000000000000000000000000000") {
-            throw ENS.NameNotFound;
-        }
-        return new Resolver(this, result, node, abi);
-    }
-
-    this.registry.resolver(node, function(err, result) {
-        if(err != null) {
-            callback(err, result);
-        } else {
-            if(result == "0x0000000000000000000000000000000000000000") {
-                callback(ENS.NameNotFound, null);
-            } else {
-                callback(null, new Resolver(this, result, node, abi));
-            }
-        }
-    }.bind(this));
-}
-
 /**
  * resolver returns a resolver object for the specified name, throwing
  * ENS.NameNotFound if the name does not exist in ENS.
  * Resolver objects are wrappers around web3 contract objects, with the
  * first argument - always the node ID in an ENS resolver - automatically
  * supplied. So, to call the `addr(node)` function on a standard resolver,
- * you only have to call `addr()`.
+ * you only have to call `addr()`. Returned objects are also 'promisified' - they
+ * return a Bluebird Promise object instead of taking a callback.
  * @param {string} name The name to look up.
  * @param {list} abi Optional. The JSON ABI definition to use for the resolver.
  *        if none is supplied, a default definition implementing `has`, `addr`, `name`,
  *        `setName` and `setAddr` is supplied.
- * @param {function} callback Optional. If specified, the function executes
- *        asynchronously.
- * @returns The resolver object if callback is not supplied.
+ * @returns The resolver object.
  */
-ENS.prototype.resolver = function(name) {
+ENS.prototype.resolver = function(name, abi) {
+    abi = abi || resolverInterface;
     var node = namehash(name);
-    return this._resolve(node, arguments)
+    return new Resolver(this, node, this.web3.eth.contract(abi));
 };
 
 /**
@@ -540,20 +470,18 @@ ENS.prototype.resolver = function(name) {
  * Resolver objects are wrappers around web3 contract objects, with the
  * first argument - always the node ID in an ENS resolver - automatically
  * supplied. So, to call the `addr(node)` function on a standard resolver,
- * you only have to call `addr()`.
+ * you only have to call `addr()`. Returned objects are also 'promisified' - they
+ * return a Bluebird Promise object instead of taking a callback.
  * @param {string} address The address to look up.
  * @param {list} abi Optional. The JSON ABI definition to use for the resolver.
  *        if none is supplied, a default definition implementing `has`, `addr`, `name`,
  *        `setName` and `setAddr` is supplied.
- * @param {function} callback Optional. If specified, the function executes
- *        asynchronously.
- * @returns The resolver object if callback is not supplied.
+ * @returns The resolver object.
  */
-ENS.prototype.reverse = function(address) {
+ENS.prototype.reverse = function(address, abi) {
     if(address.startsWith("0x"))
       address = address.slice(2);
-    var node = namehash(address + ".addr.reverse");
-    return this._resolve(node, arguments);
+    return this.resolver(address.toLowerCase() + ".addr.reverse", abi);
 };
 
 /**
@@ -563,47 +491,23 @@ ENS.prototype.reverse = function(address) {
  * @param {string} name The name to update
  * @param {address} address The address of the resolver
  * @param {object} options An optional dict of parameters to pass to web3.
- * @param {function} callback An optional callback; if specified, the
- *        function executes asynchronously.
- * @returns The transaction ID if callback is not supplied.
+ * @returns A promise that returns the transaction ID when the transaction is mined.
  */
-ENS.prototype.setResolver = function(name, addr) {
+ENS.prototype.setResolver = function(name, addr, params) {
     var node = namehash(name);
 
-    var callback = undefined;
-    if(typeof arguments[arguments.length - 1] == 'function') {
-        callback = arguments[arguments.length - 1];
-    }
-
-    var params = {};
-    if(callback && arguments.length == 4){
-        params = arguments[arguments.length - 2];
-    } else if(!callback && arguments.length == 3){
-        params = arguments[arguments.length - 1];
-    }
-
-    if(!callback) {
-        return this.registry.setResolver(node, addr, params);
-    } else {
-        this.registry.setResolver(node, addr, params, callback);
-    }
+    return this.registry.setResolverAsync(node, addr, params);
 }
 
 /**
  * owner returns the address of the owner of the specified name.
  * @param {string} name The name to look up.
- * @param {function} callback An optional callback; if specified, the
- *        function executes asynchronously.
- * @returns The resolved address if callback is not supplied.
+ * @returns A promise returning the owner address of the specified name.
  */
 ENS.prototype.owner = function(name, callback) {
     var node = namehash(name);
 
-    if(callback) {
-        this.registry.owner(node, callback);
-    } else {
-        return this.registry.owner(node);
-    }
+    return this.registry.ownerAsync(node);
 }
 
 /**
@@ -613,30 +517,12 @@ ENS.prototype.owner = function(name, callback) {
  * @param {string} name The name to update
  * @param {address} address The address of the new owner
  * @param {object} options An optional dict of parameters to pass to web3.
- * @param {function} callback An optional callback; if specified, the
- *        function executes asynchronously.
- * @returns The transaction ID if callback is not supplied.
+ * @returns A promise returning the transaction ID of the transaction, once mined.
  */
-ENS.prototype.setOwner = function(name, addr) {
+ENS.prototype.setOwner = function(name, addr, params) {
     var node = namehash(name);
 
-    var callback = undefined;
-    if(typeof arguments[arguments.length - 1] == 'function') {
-        callback = arguments[arguments.length - 1];
-    }
-
-    var params = {};
-    if(callback && arguments.length == 4) {
-        params = arguments[arguments.length - 2];
-    } else if(!callback && arguments.length == 3) {
-        params = arguments[arguments.length - 1];
-    }
-
-    if(!callback) {
-        return this.registry.setOwner(node, addr, params);
-    } else {
-        this.registry.setOwner(node, addr, params, callback);
-    }
+    return this.registry.setOwnerAsync(node, addr, params);
 }
 
 /**
@@ -647,30 +533,12 @@ ENS.prototype.setOwner = function(name, addr) {
  * @param {string} name The name to update
  * @param {address} address The address of the new owner
  * @param {object} options An optional dict of parameters to pass to web3.
- * @param {function} callback An optional callback; if specified, the
- *        function executes asynchronously.
- * @returns The transaction ID if callback is not supplied.
+ * @returns A promise returning the transaction ID of the transaction, once mined.
  */
-ENS.prototype.setSubnodeOwner = function(name, addr) {
+ENS.prototype.setSubnodeOwner = function(name, addr, params) {
     var node = parentNamehash(name);
 
-    var callback = undefined;
-    if(typeof arguments[arguments.length - 1] == 'function') {
-        callback = arguments[arguments.length - 1];
-    }
-
-    var params = {};
-    if (callback && arguments.length == 4) {
-        params = arguments[arguments.length - 2];
-    } else if (!callback && arguments.length == 3) {
-        params = arguments[arguments.length - 1];
-    }
-
-    if(!callback) {
-        return this.registry.setSubnodeOwner(node[1], node[0], addr, params);
-    } else {
-        this.registry.setSubnodeOwner(node[1], node[0], addr, params, callback);
-    }
+    return this.registry.setSubnodeOwnerAsync(node[1], node[0], addr, params);
 }
 
 module.exports = ENS;

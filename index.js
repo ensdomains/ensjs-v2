@@ -258,7 +258,12 @@ var resolverInterface = [
   }
 ];
 
-var publicRegistryAddress = "0x112234455c3a32fd11230c42e7bccd4a84e02010";
+var registryAddresses = {
+  // Mainnet
+  "1": "0x314159265dd8dbb310642f98f50c066173c1259b",
+  // Ropsten
+  "3": "0x112234455c3a32fd11230c42e7bccd4a84e02010",
+}
 
 /**
  * @class
@@ -266,11 +271,13 @@ var publicRegistryAddress = "0x112234455c3a32fd11230c42e7bccd4a84e02010";
 function Resolver(ens, node, contract) {
     this.ens = ens;
     this.node = node;
-    this.instancePromise = ens.registry.resolverAsync(node).then(function(address) {
-      if(address == "0x0000000000000000000000000000000000000000") {
-        return Promise.reject(ENS.NameNotFound);
-      }
-      return Promise.promisifyAll(contract.at(address));
+    this.instancePromise = ens.registryPromise.then(function(registry) {
+      return registry.resolverAsync(node).then(function(address) {
+        if(address == "0x0000000000000000000000000000000000000000") {
+          return Promise.reject(ENS.NameNotFound);
+        }
+        return Promise.promisifyAll(contract.at(address));
+      });
     });
     
     _.each(contract.abi, function(signature) {
@@ -397,8 +404,15 @@ Resolver.prototype.contract = function() {
  * @param {address} address Optional. The address of the ENS registry. Defaults to the public ENS registry.
  */
 function ENS (web3, address) {
-    this.web3 = Promise.promisifyAll(web3);
-    this.registry = Promise.promisifyAll(web3.eth.contract(registryInterface).at(address || publicRegistryAddress));
+    this.web3 = web3;
+    var registryContract = web3.eth.contract(registryInterface);
+    if(address != undefined) {
+      this.registryPromise = Promise.resolve(Promise.promisifyAll(registryContract.at(address)));
+    } else {
+      this.registryPromise = Promise.promisify(web3.version.getNetwork)().then(function(version) {
+        return Promise.promisifyAll(registryContract.at(registryAddresses[version]));
+      });
+    }
 }
 
 ENS.NameNotFound = Error("ENS name not found");
@@ -496,7 +510,9 @@ ENS.prototype.reverse = function(address, abi) {
 ENS.prototype.setResolver = function(name, addr, params) {
     var node = namehash(name);
 
-    return this.registry.setResolverAsync(node, addr, params);
+    return this.registryPromise.then(function(registry) {
+      return registry.setResolverAsync(node, addr, params);
+    });
 }
 
 /**
@@ -507,7 +523,9 @@ ENS.prototype.setResolver = function(name, addr, params) {
 ENS.prototype.owner = function(name, callback) {
     var node = namehash(name);
 
-    return this.registry.ownerAsync(node);
+    return this.registryPromise.then(function(registry) {
+      return registry.ownerAsync(node);
+    });
 }
 
 /**
@@ -522,7 +540,9 @@ ENS.prototype.owner = function(name, callback) {
 ENS.prototype.setOwner = function(name, addr, params) {
     var node = namehash(name);
 
-    return this.registry.setOwnerAsync(node, addr, params);
+    return this.registryPromise.then(function(registry) {
+      return registry.setOwnerAsync(node, addr, params);
+    });
 }
 
 /**
@@ -538,7 +558,9 @@ ENS.prototype.setOwner = function(name, addr, params) {
 ENS.prototype.setSubnodeOwner = function(name, addr, params) {
     var node = parentNamehash(name);
 
-    return this.registry.setSubnodeOwnerAsync(node[1], node[0], addr, params);
+    return this.registryPromise.then(function(registry) {
+      return registry.setSubnodeOwnerAsync(node[1], node[0], addr, params);
+    });
 }
 
 module.exports = ENS;

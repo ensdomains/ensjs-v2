@@ -19,6 +19,7 @@ var textEncoding = require('text-encoding');
 var TextDecoder = textEncoding.TextDecoder;
 var uts46 = require('idna-uts46');
 var _ = require('underscore');
+var registryAddresses = require('ethereum-ens-network-map');
 
 var registryInterface = [
   {
@@ -258,13 +259,6 @@ var resolverInterface = [
   }
 ];
 
-var registryAddresses = {
-  // Mainnet
-  "1": "0x314159265dd8dbb310642f98f50c066173c1259b",
-  // Ropsten
-  "3": "0x112234455c3a32fd11230c42e7bccd4a84e02010",
-}
-
 /**
  * @class
  */
@@ -279,7 +273,7 @@ function Resolver(ens, node, contract) {
         return Promise.promisifyAll(contract.at(address));
       });
     });
-    
+
     _.each(contract.abi, function(signature) {
         this[signature.name] = function() {
           var args = arguments;
@@ -326,7 +320,7 @@ function fromHex(x) {
   if(x.startsWith("0x")) {
     x = x.slice(2);
   }
-  
+
   var ret = new Uint8Array(x.length / 2);
   for(var i = 0; i < ret.length; i++) {
     ret[i] = parseInt(x.slice(i * 2, i * 2 + 2), 16);
@@ -369,7 +363,7 @@ Resolver.prototype.contract = function() {
   }.bind(this));
 };
 
-/** 
+/**
  * @class
  *
  * @description Provides an easy-to-use interface to the Ethereum Name Service.
@@ -529,7 +523,7 @@ ENS.prototype.owner = function(name, callback) {
 }
 
 /**
- * setOwner sets the owner of the specified name. Only the owner may call 
+ * setOwner sets the owner of the specified name. Only the owner may call
  * setResolver or setSubnodeOwner. The calling account must be the current
  * owner of the name in order for this call to succeed.
  * @param {string} name The name to update

@@ -52,27 +52,6 @@ describe('ENS', function() {
 		});
 	});
 
-	describe('#namehash()', function() {
-		it('should produce valid hashes', function() {
-			assert.equal(ENS.namehash(''), '0x0000000000000000000000000000000000000000000000000000000000000000');
-			assert.equal(ENS.namehash('eth'), '0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae');
-			assert.equal(ENS.namehash('foo.eth'), '0xde9b09fd7c5f901e23a3f19fecc54828e9c848539801e86591bd9801b019f84f');
-		});
-
-		it('should canonicalize with nameprep', function() {
-			assert.equal(ENS.namehash('name.eth'), ENS.namehash('NAME.eth'));
-		});
-
-		it('should prohibit invalid names', function() {
-			try {
-				ENS.normalise('foo_!bar');
-				assert.fail("Expected exception");
-			} catch(e) {
-				assert.equal('Error: Illegal char _', e);
-			}
-		});
-	})
-
 	describe('#resolve()', function() {
 		it('should get resolver addresses', function(done) {
 			ens.resolver('foo.eth').resolverAddress().then(function(addr) {

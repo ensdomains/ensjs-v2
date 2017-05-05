@@ -1,6 +1,6 @@
 {
   "name": "ethereum-ens",
-  "version": "0.6.1",
+  "version": "0.7.1",
   "homepage": "https://github.com/Arachnid/ensjs#readme",
   "description": "Javascript bindings for the Ethereum Name Service",
   "main": "index.js",
@@ -26,8 +26,8 @@
   },
   "dependencies": {
     "bluebird": "^3.4.7",
-    "crypto-js": "^3.1.6",
-    "idna-uts46": "^1.0.1",
+    "eth-ens-namehash": "^2.0.0",
+    "js-sha3": "^0.5.7",
     "pako": "^1.0.4",
     "text-encoding": "^0.6.4",
     "underscore": "^1.8.3"

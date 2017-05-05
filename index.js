@@ -12,12 +12,12 @@
     along with ethereum-ens.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-var CryptoJS = require('crypto-js');
+var namehash = require('eth-ens-namehash')
 var pako = require('pako');
 var Promise = require('bluebird');
+var sha3 = require('js-sha3').keccak_256
 var textEncoding = require('text-encoding');
 var TextDecoder = textEncoding.TextDecoder;
-var uts46 = require('idna-uts46');
 var _ = require('underscore');
 
 var registryInterface = [
@@ -263,6 +263,8 @@ var registryAddresses = {
   "1": "0x314159265dd8dbb310642f98f50c066173c1259b",
   // Ropsten
   "3": "0x112234455c3a32fd11230c42e7bccd4a84e02010",
+  // Rinkeby
+  "4": "0xe7410170f87102DF0055eB195163A03B7F2Bff4A",
 }
 
 /**
@@ -417,44 +419,12 @@ function ENS (web3, address) {
 
 ENS.NameNotFound = Error("ENS name not found");
 
-function sha3(input) {
-    return CryptoJS.SHA3(input, {outputLength: 256})
-}
-
-/**
- * normalise namepreps a name, throwing an exception if it contains invalid characters.
- * @param {string} name The name to normalise
- * @returns The normalised name. Throws ENS.InvalidName if the name contains invalid characters.
- */
-function normalise(name) {
-  return uts46.toUnicode(name, {useStd3ASCII: true, transitional: false});
-}
-ENS.normalise = normalise;
-
-/**
- * namehash implements ENS' name hash algorithm.
- * @param {string} name The name to hash
- * @returns The computed namehash, as a hex string.
- */
-function namehash(name) {
-    name = normalise(name);
-    var node = CryptoJS.enc.Hex.parse('0000000000000000000000000000000000000000000000000000000000000000');
-    if(name && name != '') {
-        var labels = name.split(".");
-        for(var i = labels.length - 1; i >= 0; i--) {
-            node = sha3(node.concat(sha3(labels[i])));
-        }
-    }
-    return '0x' + node.toString();
-}
-ENS.namehash = namehash;
-
 function parentNamehash(name) {
     var dot = name.indexOf('.');
     if(dot == -1) {
-        return ['0x' + sha3(normalise(name)), namehash('')];
+        return ['0x' + sha3(namehash.normalize(name)), namehash.hash('')];
     } else {
-        return ['0x' + sha3(normalise(name.slice(0, dot))), namehash(name.slice(dot + 1))];
+        return ['0x' + sha3(namehash.normalize(name.slice(0, dot))), namehash.hash(name.slice(dot + 1))];
     }
 }
 
@@ -474,7 +444,7 @@ function parentNamehash(name) {
  */
 ENS.prototype.resolver = function(name, abi) {
     abi = abi || resolverInterface;
-    var node = namehash(name);
+    var node = namehash.hash(name);
     return new Resolver(this, node, this.web3.eth.contract(abi));
 };
 
@@ -508,7 +478,7 @@ ENS.prototype.reverse = function(address, abi) {
  * @returns A promise that returns the transaction ID when the transaction is mined.
  */
 ENS.prototype.setResolver = function(name, addr, params) {
-    var node = namehash(name);
+    var node = namehash.hash(name);
 
     return this.registryPromise.then(function(registry) {
       return registry.setResolverAsync(node, addr, params);
@@ -521,7 +491,7 @@ ENS.prototype.setResolver = function(name, addr, params) {
  * @returns A promise returning the owner address of the specified name.
  */
 ENS.prototype.owner = function(name, callback) {
-    var node = namehash(name);
+    var node = namehash.hash(name);
 
     return this.registryPromise.then(function(registry) {
       return registry.ownerAsync(node);
@@ -538,7 +508,7 @@ ENS.prototype.owner = function(name, callback) {
  * @returns A promise returning the transaction ID of the transaction, once mined.
  */
 ENS.prototype.setOwner = function(name, addr, params) {
-    var node = namehash(name);
+    var node = namehash.hash(name);
 
     return this.registryPromise.then(function(registry) {
       return registry.setOwnerAsync(node, addr, params);

@@ -5,19 +5,20 @@
 **Parameters**
 
 -   `ens`  
--   `address`  
 -   `node`  
--   `abi`  
+-   `contract`  
+
+## resolverAddress
+
+resolverAddress returns the address of the resolver.
+
+Returns **any** A promise for the address of the resolver.
 
 ## reverseAddr
 
 reverseAddr looks up the reverse record for the address returned by the resolver's addr()
 
-**Parameters**
-
--   `callback`  An optional callback, for asynchronous operation.
-
-Returns **any** In synchronous operation, the Resolver for the reverse record.
+Returns **any** A promise for the Resolver for the reverse record.
 
 ## abi
 
@@ -26,22 +27,19 @@ abi returns the ABI associated with the name. Automatically looks for an ABI on 
 
 **Parameters**
 
--   `callback`  An optional callback, for asynchronous operation.
+-   `Optional.null` **bool** If false, do not look up the ABI on the reverse entry.
+-   `reverse`  
 
-Returns **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** In synchronous operation, the contract ABI.
+Returns **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** A promise for the contract ABI.
 
 ## contract
 
 contract returns a web3 contract object. The address is that returned by this resolver's
 `addr()`, and the ABI is loaded from this resolver's `ABI()` method, or the ABI on the
 reverse record if that's not found. Returns null if no address is specified or no ABI
-was found.
+was found. The returned contract object will not be promisifed or otherwise modified.
 
-**Parameters**
-
--   `callback`  An optional callback, for asynchronous operation.
-
-Returns **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** In synchronous operation, the contract instance.
+Returns **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** A promise for the contract instance.
 
 # ENS
 
@@ -55,12 +53,16 @@ Example usage:
     var web3 = new Web3();
     var ens = new ENS(web3);
 
-    var address = ens.resolver('foo.eth').addr();
+    var address = ens.resolver('foo.eth').addr().then(function(addr) { ... });
 
-Throughout this module, the same optionally-asynchronous pattern as web3 is
-used: all functions that call web3 take a callback as an optional last
-argument; if supplied, the function returns nothing, but instead calls the
-callback with (err, result) when the operation completes.
+Functions that require communicating with the node return promises, rather than
+using callbacks. A promise has a `then` function, which takes a callback and will
+call it when the promise is fulfilled; `then` returns another promise, so you can
+chain callbacks. For more details, see <http://bluebirdjs.com/>.
+
+Notably, the `resolver` method returns a resolver instance immediately; lookup of
+the resolver address is done in the background or when you first call an asynchronous
+method on the resolver.
 
 Functions that create transactions also take an optional 'options' argument;
 this has the same parameters as web3.
@@ -68,7 +70,7 @@ this has the same parameters as web3.
 **Parameters**
 
 -   `web3` **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** A web3 instance to use to communicate with the blockchain.
--   `address` **address** The address of the ENS registry. Defaults to the public ENS registry if not supplied.
+-   `address` **address** Optional. The address of the ENS registry. Defaults to the public ENS registry.
 
 **Meta**
 
@@ -82,7 +84,8 @@ ENS.NameNotFound if the name does not exist in ENS.
 Resolver objects are wrappers around web3 contract objects, with the
 first argument - always the node ID in an ENS resolver - automatically
 supplied. So, to call the `addr(node)` function on a standard resolver,
-you only have to call `addr()`.
+you only have to call `addr()`. Returned objects are also 'promisified' - they
+return a Bluebird Promise object instead of taking a callback.
 
 **Parameters**
 
@@ -90,10 +93,8 @@ you only have to call `addr()`.
 -   `abi` **list** Optional. The JSON ABI definition to use for the resolver.
            if none is supplied, a default definition implementing `has`, `addr`, `name`,
            `setName` and `setAddr` is supplied.
--   `callback` **[function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)** Optional. If specified, the function executes
-           asynchronously.
 
-Returns **any** The resolver object if callback is not supplied.
+Returns **any** The resolver object.
 
 ## reverse
 
@@ -102,7 +103,8 @@ throwing ENS.NameNotFound if the reverse record does not exist in ENS.
 Resolver objects are wrappers around web3 contract objects, with the
 first argument - always the node ID in an ENS resolver - automatically
 supplied. So, to call the `addr(node)` function on a standard resolver,
-you only have to call `addr()`.
+you only have to call `addr()`. Returned objects are also 'promisified' - they
+return a Bluebird Promise object instead of taking a callback.
 
 **Parameters**
 
@@ -110,10 +112,8 @@ you only have to call `addr()`.
 -   `abi` **list** Optional. The JSON ABI definition to use for the resolver.
            if none is supplied, a default definition implementing `has`, `addr`, `name`,
            `setName` and `setAddr` is supplied.
--   `callback` **[function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)** Optional. If specified, the function executes
-           asynchronously.
 
-Returns **any** The resolver object if callback is not supplied.
+Returns **any** The resolver object.
 
 ## setResolver
 
@@ -126,11 +126,10 @@ succeed.
 -   `name` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** The name to update
 -   `address` **address** The address of the resolver
 -   `options` **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** An optional dict of parameters to pass to web3.
--   `callback` **[function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)** An optional callback; if specified, the
-           function executes asynchronously.
 -   `addr`  
+-   `params`  
 
-Returns **any** The transaction ID if callback is not supplied.
+Returns **any** A promise that returns the transaction ID when the transaction is mined.
 
 ## owner
 
@@ -139,10 +138,9 @@ owner returns the address of the owner of the specified name.
 **Parameters**
 
 -   `name` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** The name to look up.
--   `callback` **[function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)** An optional callback; if specified, the
-           function executes asynchronously.
+-   `callback`  
 
-Returns **any** The resolved address if callback is not supplied.
+Returns **any** A promise returning the owner address of the specified name.
 
 ## setOwner
 
@@ -155,11 +153,10 @@ owner of the name in order for this call to succeed.
 -   `name` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** The name to update
 -   `address` **address** The address of the new owner
 -   `options` **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** An optional dict of parameters to pass to web3.
--   `callback` **[function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)** An optional callback; if specified, the
-           function executes asynchronously.
 -   `addr`  
+-   `params`  
 
-Returns **any** The transaction ID if callback is not supplied.
+Returns **any** A promise returning the transaction ID of the transaction, once mined.
 
 ## setSubnodeOwner
 
@@ -173,28 +170,7 @@ the owner of 'bar.eth'.
 -   `name` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** The name to update
 -   `address` **address** The address of the new owner
 -   `options` **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** An optional dict of parameters to pass to web3.
--   `callback` **[function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)** An optional callback; if specified, the
-           function executes asynchronously.
 -   `addr`  
+-   `params`  
 
-Returns **any** The transaction ID if callback is not supplied.
-
-# normalise
-
-normalise namepreps a name, throwing an exception if it contains invalid characters.
-
-**Parameters**
-
--   `name` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** The name to normalise
-
-Returns **any** The normalised name. Throws ENS.InvalidName if the name contains invalid characters.
-
-# namehash
-
-namehash implements ENS' name hash algorithm.
-
-**Parameters**
-
--   `name` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** The name to hash
-
-Returns **any** The computed namehash, as a hex string.
+Returns **any** A promise returning the transaction ID of the transaction, once mined.

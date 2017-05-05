@@ -54,21 +54,18 @@ describe('ENS', function() {
 
 	describe('#namehash()', function() {
 		it('should produce valid hashes', function() {
-			var ens = new ENS(web3, ensRoot);
-			assert.equal(ens.namehash(''), '0x0000000000000000000000000000000000000000000000000000000000000000');
-			assert.equal(ens.namehash('eth'), '0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae');
-			assert.equal(ens.namehash('foo.eth'), '0xde9b09fd7c5f901e23a3f19fecc54828e9c848539801e86591bd9801b019f84f');
+			assert.equal(ENS.namehash(''), '0x0000000000000000000000000000000000000000000000000000000000000000');
+			assert.equal(ENS.namehash('eth'), '0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae');
+			assert.equal(ENS.namehash('foo.eth'), '0xde9b09fd7c5f901e23a3f19fecc54828e9c848539801e86591bd9801b019f84f');
 		});
 
 		it('should canonicalize with nameprep', function() {
-			var ens = new ENS(web3, ensRoot);
-			assert.equal(ens.namehash('name.eth'), ens.namehash('NAME.eth'));
+			assert.equal(ENS.namehash('name.eth'), ENS.namehash('NAME.eth'));
 		});
 
 		it('should prohibit invalid names', function() {
-			var ens = new ENS(web3, ensRoot);
 			try {
-				ens.normalise('foo_!bar');
+				ENS.normalise('foo_!bar');
 				assert.fail("Expected exception");
 			} catch(e) {
 				assert.equal('Error: Illegal char _', e);

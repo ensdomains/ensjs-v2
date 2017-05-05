@@ -429,7 +429,7 @@ function sha3(input) {
 function normalise(name) {
   return uts46.toUnicode(name, {useStd3ASCII: true, transitional: false});
 }
-ENS.prototype.normalise = normalise;
+ENS.normalise = normalise;
 
 /**
  * namehash implements ENS' name hash algorithm.
@@ -447,7 +447,7 @@ function namehash(name) {
     }
     return '0x' + node.toString();
 }
-ENS.prototype.namehash = namehash;
+ENS.namehash = namehash;
 
 function parentNamehash(name) {
     var dot = name.indexOf('.');

@@ -281,7 +281,7 @@ function Resolver(ens, node, contract) {
         return Promise.promisifyAll(contract.at(address));
       });
     });
-    
+
     _.each(contract.abi, function(signature) {
         this[signature.name] = function() {
           var args = arguments;
@@ -328,7 +328,7 @@ function fromHex(x) {
   if(x.startsWith("0x")) {
     x = x.slice(2);
   }
-  
+
   var ret = new Uint8Array(x.length / 2);
   for(var i = 0; i < ret.length; i++) {
     ret[i] = parseInt(x.slice(i * 2, i * 2 + 2), 16);
@@ -371,7 +371,7 @@ Resolver.prototype.contract = function() {
   }.bind(this));
 };
 
-/** 
+/**
  * @class
  *
  * @description Provides an easy-to-use interface to the Ethereum Name Service.
@@ -402,11 +402,16 @@ Resolver.prototype.contract = function() {
  * @date 2016
  * @license LGPL
  *
- * @param {object} web3 A web3 instance to use to communicate with the blockchain.
+ * @param {object} provider A web3 provider to use to communicate with the blockchain.
  * @param {address} address Optional. The address of the ENS registry. Defaults to the public ENS registry.
  */
-function ENS (web3, address) {
-    this.web3 = web3;
+function ENS (provider, address) {
+    // Ensures backwards compatibility
+    if (provider.currentProvider) {
+        provider = provider.currentProvider;
+    }
+
+    this.web3 = new Web3(provider);
     var registryContract = web3.eth.contract(registryInterface);
     if(address != undefined) {
       this.registryPromise = Promise.resolve(Promise.promisifyAll(registryContract.at(address)));
@@ -499,7 +504,7 @@ ENS.prototype.owner = function(name, callback) {
 }
 
 /**
- * setOwner sets the owner of the specified name. Only the owner may call 
+ * setOwner sets the owner of the specified name. Only the owner may call
  * setResolver or setSubnodeOwner. The calling account must be the current
  * owner of the name in order for this call to succeed.
  * @param {string} name The name to update

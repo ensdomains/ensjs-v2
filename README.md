@@ -50,8 +50,8 @@ Example usage:
     var ENS = require('ethereum-ens');
     var Web3 = require('web3');
 
-    var web3 = new Web3();
-    var ens = new ENS(web3);
+    var provider = new Web3.providers.HttpProvider();
+    var ens = new ENS(provider);
 
     var address = ens.resolver('foo.eth').addr().then(function(addr) { ... });
 
@@ -69,7 +69,7 @@ this has the same parameters as web3.
 
 **Parameters**
 
--   `web3` **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** A web3 instance to use to communicate with the blockchain.
+-   `provider` **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** A web3 provider to use to communicate with the blockchain.
 -   `address` **address** Optional. The address of the ENS registry. Defaults to the public ENS registry.
 
 **Meta**
@@ -144,7 +144,7 @@ Returns **any** A promise returning the owner address of the specified name.
 
 ## setOwner
 
-setOwner sets the owner of the specified name. Only the owner may call 
+setOwner sets the owner of the specified name. Only the owner may call
 setResolver or setSubnodeOwner. The calling account must be the current
 owner of the name in order for this call to succeed.
 

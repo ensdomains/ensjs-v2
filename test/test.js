@@ -30,7 +30,7 @@ describe('ENS', function() {
 			assert.equal(compiled.errors, undefined);
 			var deployer = compiled.contracts[':DeployENS'];
 			var deployensContract = web3.eth.contract(JSON.parse(deployer.interface));
-			
+
 			// Deploy the contract
 			deployens = deployensContract.new(
 			   {
@@ -44,7 +44,7 @@ describe('ENS', function() {
 			   	 		contract.ens.call(function(err, value) {
 			   	 			assert.equal(err, null, err);
 			   	 			ensRoot = value;
-							ens = new ENS(web3, ensRoot);
+							ens = new ENS(web3.currentProvider, ensRoot);
 			   	 			done();
 			   	 		});
 				   	 }

@@ -30,7 +30,8 @@
     "js-sha3": "^0.5.7",
     "pako": "^1.0.4",
     "text-encoding": "^0.6.4",
-    "underscore": "^1.8.3"
+    "underscore": "^1.8.3",
+    "web3": "^0.19.1"
   },
   "devDependencies": {
     "async": "^2.0.0",

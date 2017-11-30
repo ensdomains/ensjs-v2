@@ -19,6 +19,7 @@ var sha3 = require('js-sha3').keccak_256
 var textEncoding = require('text-encoding');
 var TextDecoder = textEncoding.TextDecoder;
 var _ = require('underscore');
+var Web3 = require('web3');
 
 var registryInterface = [
   {

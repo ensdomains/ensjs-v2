@@ -406,6 +406,11 @@ Resolver.prototype.contract = function() {
  * @param {address} address Optional. The address of the ENS registry. Defaults to the public ENS registry.
  */
 function ENS (provider, address) {
+    // Ensures backwards compatibility
+    if (provider.currentProvider) {
+        provider = provider.currentProvider;
+    }
+
     this.web3 = new Web3(provider);
     var registryContract = web3.eth.contract(registryInterface);
     if(address != undefined) {

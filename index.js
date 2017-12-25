@@ -413,11 +413,11 @@ function ENS (provider, address) {
     }
 
     this.web3 = new Web3(provider);
-    var registryContract = web3.eth.contract(registryInterface);
+    var registryContract = this.web3.eth.contract(registryInterface);
     if(address != undefined) {
       this.registryPromise = Promise.resolve(Promise.promisifyAll(registryContract.at(address)));
     } else {
-      this.registryPromise = Promise.promisify(web3.version.getNetwork)().then(function(version) {
+      this.registryPromise = Promise.promisify(this.web3.version.getNetwork)().then(function(version) {
         return Promise.promisifyAll(registryContract.at(registryAddresses[version]));
       });
     }

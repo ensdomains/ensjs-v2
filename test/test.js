@@ -4,7 +4,7 @@ var assert = require('assert');
 var async = require('async');
 var fs = require('fs');
 var solc = require('solc');
-var TestRPC = require('ethereumjs-testrpc');
+var TestRPC = require('ganache-cli');
 var Web3 = require('web3');
 
 var web3 = new Web3();

@@ -35,8 +35,8 @@
   },
   "devDependencies": {
     "async": "^2.0.0",
+    "ganache-cli": "^6.1.0",
     "mocha": "^3.0.2",
-    "ethereumjs-testrpc": "^2.2.3",
-    "solc": "^0.4.9"
+    "solc": "0.4.9"
   }
 }

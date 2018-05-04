@@ -413,12 +413,15 @@ function ENS (provider, address) {
     }
 
     this.web3 = new Web3(provider);
-    var registryContract = this.web3.eth.contract(registryInterface);
+    var registryContract = new this.web3.eth.Contract(registryInterface);
+    debugger;
     if(address != undefined) {
-      this.registryPromise = Promise.resolve(Promise.promisifyAll(registryContract.at(address)));
+      registryContract.options.address = address;
+      this.registryPromise = Promise.resolve(Promise.promisifyAll(registryContract));
     } else {
-      this.registryPromise = Promise.promisify(this.web3.version.getNetwork)().then(function(version) {
-        return Promise.promisifyAll(registryContract.at(registryAddresses[version]));
+      this.registryPromise = Promise.promisify(this.web3.eth.net)().then(function(version) {
+        registryContract.options.address = registryAddresses[version];
+        return Promise.promisifyAll(registryContract);
       });
     }
 }

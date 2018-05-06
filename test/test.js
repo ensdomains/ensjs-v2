@@ -27,7 +27,7 @@ describe('ENS', function() {
 			var compiled = solc.compile(source, 1);
 			assert.equal(compiled.errors, undefined);
 			var deployer = compiled.contracts[':DeployENS'];
-			var deployensContract = new web3.eth.Contract(JSON.parse(deployer.interface)); // TODO: done
+			var deployensContract = new web3.eth.Contract(JSON.parse(deployer.interface));
 
 			// Deploy the contract
 			deployensContract.deploy({

@@ -275,20 +275,23 @@ function Resolver(ens, node, contract) {
     this.ens = ens;
     this.node = node;
     this.instancePromise = ens.registryPromise.then(function(registry) {
-      return registry.resolverAsync(node).then(function(address) {
+      return registry.methods.resolver(node).call().then(function(address) { // TODO: done
         if(address == "0x0000000000000000000000000000000000000000") {
           return Promise.reject(ENS.NameNotFound);
         }
-        return Promise.promisifyAll(contract.at(address));
+        // TODO: done
+        contract.options.address = address;
+        return contract;
       });
     });
 
-    _.each(contract.abi, function(signature) {
-        this[signature.name] = function() {
+    // TODO: done
+    _.each(contract.methods, function(method, signature) {
+        this[signature] = function() {
           var args = arguments;
           return this.instancePromise.then(function(instance) {
-            return _.partial(instance[signature.name + 'Async'], node).apply(instance, args);
-          }).bind(this);
+            return _.partial(instance.methods[signature], node).apply(instance.methods, args);
+          }).bind(this); // TODO: done
         }.bind(this);
     }.bind(this));
 }
@@ -311,7 +314,7 @@ var supportedDecoders = _.reduce(_.keys(abiDecoders), function(memo, val) { retu
  */
 Resolver.prototype.resolverAddress = function() {
   return this.instancePromise.then(function(instance) {
-    return instance.address;
+    return instance._address; // TODO: done
   });
 }
 
@@ -346,7 +349,7 @@ function fromHex(x) {
  */
 Resolver.prototype.abi = function(reverse) {
   return this.instancePromise.then(function(instance) {
-    return instance.ABIAsync(this.node, supportedDecoders).then(function(result) {
+    return instance.ABI(this.node, supportedDecoders).then(function(result) { // TODO: done;
       if(result[0] == 0) {
         if(reverse == false) return null;
         return this.reverseAddr().then(function(reverse) {
@@ -368,7 +371,7 @@ Resolver.prototype.abi = function(reverse) {
  */
 Resolver.prototype.contract = function() {
   return Promise.join(this.abi(), this.addr(), function(abi, addr) {
-    return this.ens.web3.eth.contract(abi).at(addr);
+    return this.ens.web3.eth.Contract(abi, addr); // TODO: done
   }.bind(this));
 };
 
@@ -413,12 +416,15 @@ function ENS (provider, address) {
     }
 
     this.web3 = new Web3(provider);
-    var registryContract = this.web3.eth.contract(registryInterface);
+    var registryContract = new this.web3.eth.Contract(registryInterface);
     if(address != undefined) {
-      this.registryPromise = Promise.resolve(Promise.promisifyAll(registryContract.at(address)));
+      registryContract.options.address = address;
+
+      this.registryPromise = Promise.resolve(registryContract); // TODO: done
     } else {
-      this.registryPromise = Promise.promisify(this.web3.version.getNetwork)().then(function(version) {
-        return Promise.promisifyAll(registryContract.at(registryAddresses[version]));
+      this.registryPromise = this.web3.eth.net.getId().then(function(version) { // TODO: done
+        registryContract.options.address = registryAddresses[version]; // TODO: done
+        return registryContract; // TODO: done
       });
     }
 }
@@ -451,7 +457,7 @@ function parentNamehash(name) {
 ENS.prototype.resolver = function(name, abi) {
     abi = abi || resolverInterface;
     var node = namehash.hash(name);
-    return new Resolver(this, node, this.web3.eth.contract(abi));
+    return new Resolver(this, node, new this.web3.eth.Contract(abi)); // TODO: done
 };
 
 /**
@@ -469,6 +475,7 @@ ENS.prototype.resolver = function(name, abi) {
  * @returns The resolver object.
  */
 ENS.prototype.reverse = function(address, abi) {
+  debugger;
     if(address.startsWith("0x"))
       address = address.slice(2);
     return this.resolver(address.toLowerCase() + ".addr.reverse", abi);
@@ -487,7 +494,7 @@ ENS.prototype.setResolver = function(name, addr, params) {
     var node = namehash.hash(name);
 
     return this.registryPromise.then(function(registry) {
-      return registry.setResolverAsync(node, addr, params);
+      return registry.methods.setResolver(node, addr, params).call(); // TODO: done
     });
 }
 
@@ -500,7 +507,7 @@ ENS.prototype.owner = function(name, callback) {
     var node = namehash.hash(name);
 
     return this.registryPromise.then(function(registry) {
-      return registry.ownerAsync(node);
+      return registry.methods.owner(node); // TODO: done
     });
 }
 
@@ -517,7 +524,7 @@ ENS.prototype.setOwner = function(name, addr, params) {
     var node = namehash.hash(name);
 
     return this.registryPromise.then(function(registry) {
-      return registry.setOwnerAsync(node, addr, params);
+      return registry.methods.setOwner(node, addr, params); // TODO: done
     });
 }
 
@@ -535,7 +542,7 @@ ENS.prototype.setSubnodeOwner = function(name, addr, params) {
     var node = parentNamehash(name);
 
     return this.registryPromise.then(function(registry) {
-      return registry.setSubnodeOwnerAsync(node[1], node[0], addr, params);
+      return registry.methods.setSubnodeOwner(node[1], node[0], addr, params); // TODO: done
     });
 }
 

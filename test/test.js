@@ -53,25 +53,6 @@ describe('ENS', function() {
 				}
 			})
 			.catch(function(err) { assert.fail(err); });
-
-			// Deploy the contract
-			// deployens = deployensContract.methods.new(
-			//    {
-			//      from: accounts[0],
-			//      data: deployer.bytecode,
-			//      gas: 4700000
-			//    }, function(err, contract) {
-			//    	    assert.equal(err, null, err);
-			//    	    if(contract.address != undefined) {
-			//    	    	// Fetch the address of the ENS registry
-			//    	 		contract.ens.call(function(err, value) {
-			//    	 			assert.equal(err, null, err);
-			//    	 			ensRoot = value;
-			// 				ens = new ENS(web3.currentProvider, ensRoot);
-			//    	 			done();
-			//    	 		});
-			// 	   	 }
-			//    });
 		});
 	});
 
@@ -85,7 +66,6 @@ describe('ENS', function() {
 
 		it('should resolve names', function(done) {
 			ens.resolver('foo.eth').addr()
-			// .then(function(res) { return res.call() })
 			.then(function(result) {
 				assert.equal(result, deployens._address);
 				done();
@@ -97,12 +77,10 @@ describe('ENS', function() {
 
 			Promise.all([
 				resolver.has(web3.utils.asciiToHex('addr'))
-				// .then(function(res) { return res.call() })
 				.then(function(result) {
 					assert.equal(result, true);
 				}),
 				resolver.has(web3.utils.asciiToHex('blah'))
-				// .then(function(res) { return res.call() })
 				.then(function(result) {
 					assert.equal(result, false);
 				})
@@ -111,7 +89,6 @@ describe('ENS', function() {
 
 		it('should error when the name record does not exist', function(done) {
 			ens.resolver('bar.eth').addr()
-			// .then(function(res) { return res.call() })
 			.catch(function(err) {
 				assert.ok(err.toString().indexOf('invalid JUMP') != -1, err);
 				done();
@@ -120,7 +97,6 @@ describe('ENS', function() {
 
 		it('should error when the name does not exist', function(done) {
 			ens.resolver('quux.eth').addr()
-			// .then(function(res) { return res.call() })
 			.catch(function(err) {
 				assert.equal(err, ENS.NameNotFound);
 				done();
@@ -220,7 +196,6 @@ describe('ENS', function() {
 	describe("#reverse", function() {
 		it('should look up reverse DNS records', function(done) {
 			ens.reverse(deployens._address).name()
-			// .then(function(res) { return res.call() })
 			.then(function(result) {
 				assert.equal(result, 'deployer.eth');
 				done();

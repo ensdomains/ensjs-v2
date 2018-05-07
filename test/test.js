@@ -79,15 +79,17 @@ describe('ENS', function() {
 		it('should get resolver addresses', function(done) {
 			ens.resolver('foo.eth').resolverAddress().then(function(addr) {
 				assert.notEqual(addr, '0x0000000000000000000000000000000000000000');
-			}).catch(assert.ifError).finally(done);
+				done();
+			}).catch(assert.ifError);
 		});
 
 		it('should resolve names', function(done) {
 			ens.resolver('foo.eth').addr()
-			.then(function(res) { return res.call() })
+			// .then(function(res) { return res.call() })
 			.then(function(result) {
 				assert.equal(result, deployens._address);
-			}).catch(assert.ifError).finally(done);
+				done();
+			}).catch(assert.ifError);
 		});
 
 		it('should implement has()', function(done) {
@@ -95,12 +97,12 @@ describe('ENS', function() {
 
 			Promise.all([
 				resolver.has(web3.utils.asciiToHex('addr'))
-				.then(function(res) { debugger; return res.call() })
+				// .then(function(res) { return res.call() })
 				.then(function(result) {
 					assert.equal(result, true);
 				}),
 				resolver.has(web3.utils.asciiToHex('blah'))
-				.then(function(res) { return res.call() })
+				// .then(function(res) { return res.call() })
 				.then(function(result) {
 					assert.equal(result, false);
 				})
@@ -109,7 +111,7 @@ describe('ENS', function() {
 
 		it('should error when the name record does not exist', function(done) {
 			ens.resolver('bar.eth').addr()
-			.then(function(res) { return res.call() })
+			// .then(function(res) { return res.call() })
 			.catch(function(err) {
 				assert.ok(err.toString().indexOf('invalid JUMP') != -1, err);
 				done();
@@ -118,7 +120,7 @@ describe('ENS', function() {
 
 		it('should error when the name does not exist', function(done) {
 			ens.resolver('quux.eth').addr()
-			.then(function(res) { return res.call() })
+			// .then(function(res) { return res.call() })
 			.catch(function(err) {
 				assert.equal(err, ENS.NameNotFound);
 				done();
@@ -128,10 +130,8 @@ describe('ENS', function() {
 		it('should permit name updates', function(done) {
 			var resolver = ens.resolver('bar.eth')
 			resolver.setAddr('0x12345')
-			.then(function(res) { return res.call({from: accounts[0]}) })
 			.then(function(result) {
 				return resolver.addr()
-				.then(function(res) { return res.call() })
 				.then(function(result) {
 					assert.equal(result, '0x0000000000000000000000000000000000012345');
 					done();
@@ -142,30 +142,34 @@ describe('ENS', function() {
 		it('should do reverse resolution', function(done) {
 			var resolver = ens.resolver('foo.eth');
 			resolver.reverseAddr().then(function(reverse) {
-				return reverse.name().call().then(function(result) {
+				return reverse.name().then(function(result) {
 					assert.equal(result, "deployer.eth");
+					done();
 				});
-			}).catch(assert.isError).finally(done);
+			}).catch(assert.isError);
 		});
 
 		it('should fetch ABIs from names', function(done) {
 			ens.resolver('foo.eth').abi().then(function(abi) {
 				assert.equal(abi.length, 2);
 				assert.equal(abi[0].name, "test2");
-			}).catch(assert.isError).finally(done);
+				done();
+			}).catch(assert.isError);
 		});
 
 		it('should fetch ABIs from reverse records', function(done) {
 			ens.resolver('baz.eth').abi().then(function(abi) {
 				assert.equal(abi.length, 2);
 				assert.equal(abi[0].name, "test");
-			}).catch(assert.isError).finally(done);
+				done();
+			}).catch(assert.isError);
 		});
 
 		it('should fetch contract instances', function(done) {
 			ens.resolver('baz.eth').contract().then(function(contract) {
-				assert.ok(contract.test != undefined);
-			}).catch(assert.isError).finally(done);
+				assert.ok(contract.methods.test != undefined);
+				done();
+			}).catch(assert.isError);
 		});
 	});
 
@@ -173,7 +177,8 @@ describe('ENS', function() {
 		it('should return owner values', function(done) {
 			ens.owner('bar.eth').then(function(result) {
 				assert.equal(result, accounts[0]);
-			}).catch(assert.isError).finally(done);
+				done();
+			}).catch(assert.isError);
 		});
 	});
 
@@ -182,40 +187,44 @@ describe('ENS', function() {
 			ens.setSubnodeOwner('BAZ.bar.eth', accounts[0], {from: accounts[0]}).then(function(txid) {
 				return ens.owner('baz.bar.eth').then(function(owner) {
 					assert.equal(owner, accounts[0]);
+					done();
 				});
-			}).catch(assert.isError).finally(done);
+			}).catch(assert.isError);
 		});
 	});
 
 	describe("#setResolver", function() {
 		it('should permit resolver updates', function(done) {
 			var addr = '0x2341234123412341234123412341234123412341';
-			ens.setResolver('baz.bar.eth', addr).call({from: accounts[0]}).then(function(txid) {
+			ens.setResolver('baz.bar.eth', addr).then(function(txid) {
 				return ens.resolver('baz.bar.eth').resolverAddress().then(function(address) {
 					assert.equal(address, addr);
+					done();
 				});
-			}).catch(assert.isError).finally(done);
+			}).catch(assert.isError);
 		});
 	});
 
 	describe("#setOwner", function() {
 		it('should permit owner updates', function(done) {
 			var addr = '0x3412341234123412341234123412341234123412';
-			ens.setOwner('baz.bar.eth', addr).call({from: accounts[0]}).then(function(txid) {
+			ens.setOwner('baz.bar.eth', addr).then(function(txid) {
 				return ens.owner('baz.bar.eth').then(function(owner) {
 					assert.equal(owner, addr);
+					done();
 				});
-			}).catch(assert.isError).finally(done);
+			}).catch(assert.isError);
 		});
 	});
 
 	describe("#reverse", function() {
 		it('should look up reverse DNS records', function(done) {
 			ens.reverse(deployens._address).name()
-			.then(function(res) { return res.call() })
+			// .then(function(res) { return res.call() })
 			.then(function(result) {
 				assert.equal(result, 'deployer.eth');
-			}).catch(assert.isError).finally(done);
+				done();
+			}).catch(assert.isError);
 		});
 	});
 });

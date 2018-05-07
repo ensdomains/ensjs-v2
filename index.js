@@ -279,18 +279,39 @@ function Resolver(ens, node, contract) {
         if(address == "0x0000000000000000000000000000000000000000") {
           return Promise.reject(ENS.NameNotFound);
         }
-       
+
         contract.options.address = address;
         return contract;
       });
     });
 
-   
+
     _.each(contract.methods, function(method, signature) {
+
         this[signature] = function() {
           var args = arguments;
+          var params;
           return this.instancePromise.then(function(instance) {
-            return _.partial(instance.methods[signature], node).apply(instance.methods, args);
+            // Check abi interface for constant methods
+            var asyncObj = instance._jsonInterface.reduce(function(acc, curr) {
+              if (acc) {
+                return acc;
+              } else {
+                return curr.name === signature && !curr.constant ? curr : null;
+              }
+            }, null)
+
+            // Call if it's a constant method, send (with params) if it's not
+            if (asyncObj === null) {
+              return _.partial(instance.methods[signature], node).apply(instance.methods, args).call();
+            } else {
+              if (asyncObj.inputs.length < args.length) {
+                params = args.splice(args.length - 1);
+              }
+              return ens.web3.eth.getAccounts().then(function(accounts) {
+                return _.partial(instance.methods[signature], node).apply(instance.methods, args).send(params ? params : {from: accounts[0]});
+              })
+            }
           }).bind(this);
         }.bind(this);
     }.bind(this));
@@ -349,7 +370,7 @@ function fromHex(x) {
  */
 Resolver.prototype.abi = function(reverse) {
   return this.instancePromise.then(function(instance) {
-    return instance.ABI(this.node, supportedDecoders).then(function(result) {;
+    return instance.methods.ABI(this.node, supportedDecoders).call().then(function(result) {;
       if(result[0] == 0) {
         if(reverse == false) return null;
         return this.reverseAddr().then(function(reverse) {
@@ -371,7 +392,7 @@ Resolver.prototype.abi = function(reverse) {
  */
 Resolver.prototype.contract = function() {
   return Promise.join(this.abi(), this.addr(), function(abi, addr) {
-    return this.ens.web3.eth.Contract(abi, addr);
+    return new this.ens.web3.eth.Contract(abi, addr);
   }.bind(this));
 };
 
@@ -475,7 +496,6 @@ ENS.prototype.resolver = function(name, abi) {
  * @returns The resolver object.
  */
 ENS.prototype.reverse = function(address, abi) {
-  debugger;
     if(address.startsWith("0x"))
       address = address.slice(2);
     return this.resolver(address.toLowerCase() + ".addr.reverse", abi);
@@ -494,8 +514,10 @@ ENS.prototype.setResolver = function(name, addr, params) {
     var node = namehash.hash(name);
 
     return this.registryPromise.then(function(registry) {
-      return registry.methods.setResolver(node, addr, params).call();
-    });
+      return this.web3.eth.getAccounts().then(function(accounts) {
+        return registry.methods.setResolver(node, addr).send(params ? params : {from: accounts[0]});
+      });
+    }.bind(this));
 }
 
 /**
@@ -507,7 +529,7 @@ ENS.prototype.owner = function(name, callback) {
     var node = namehash.hash(name);
 
     return this.registryPromise.then(function(registry) {
-      return registry.methods.owner(node);
+      return registry.methods.owner(node).call();
     });
 }
 
@@ -522,10 +544,11 @@ ENS.prototype.owner = function(name, callback) {
  */
 ENS.prototype.setOwner = function(name, addr, params) {
     var node = namehash.hash(name);
-
     return this.registryPromise.then(function(registry) {
-      return registry.methods.setOwner(node, addr, params);
-    });
+      return this.web3.eth.getAccounts().then(function(accounts) {
+        return registry.methods.setOwner(node, addr).send(params ? params : {from: accounts[0]});
+      });
+    }.bind(this));
 }
 
 /**
@@ -542,8 +565,10 @@ ENS.prototype.setSubnodeOwner = function(name, addr, params) {
     var node = parentNamehash(name);
 
     return this.registryPromise.then(function(registry) {
-      return registry.methods.setSubnodeOwner(node[1], node[0], addr, params);
-    });
+      return this.web3.eth.getAccounts().then(function(accounts) {
+        return registry.methods.setSubnodeOwner(node[1], node[0], addr).send(params ? params : {from: accounts[0]});
+      });
+    }.bind(this));
 }
 
 module.exports = ENS;

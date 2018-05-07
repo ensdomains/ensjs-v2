@@ -129,7 +129,7 @@ describe('ENS', function() {
 
 		it('should permit name updates', function(done) {
 			var resolver = ens.resolver('bar.eth')
-			resolver.setAddr('0x12345')
+			resolver.setAddr('0x0000000000000000000000000000000000012345')
 			.then(function(result) {
 				return resolver.addr()
 				.then(function(result) {

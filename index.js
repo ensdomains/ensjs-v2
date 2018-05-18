@@ -85,7 +85,7 @@ function Resolver_1(ens, node, contract) {
     _.each(contract.methods, function(method, signature) {
 
         this[signature] = function() {
-          var args = arguments;
+          var args = Array.prototype.slice.call(arguments);
           var params;
           return this.instancePromise.then(function(instance) {
             // Check abi interface for constant methods
@@ -101,8 +101,8 @@ function Resolver_1(ens, node, contract) {
             if (asyncObj === null) {
               return _.partial(instance.methods[signature], node).apply(instance.methods, args).call();
             } else {
-              if (asyncObj.inputs.length < args.length) {
-                params = args.splice(args.length - 1);
+              if (asyncObj.inputs.length < args.length + 1) {
+                params = args.splice(args.length - 1)[0];
               }
               return ens.web3.eth.getAccounts().then(function(accounts) {
                 return _.partial(instance.methods[signature], node).apply(instance.methods, args).send(params ? params : {from: accounts[0]});

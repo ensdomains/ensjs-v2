@@ -67,7 +67,7 @@ ENS.NameNotFound = Error("ENS name not found");
 /**
  * @class
  */
-function Resolver_1_X(ens, node, contract) {
+function Resolver_1(ens, node, contract) {
     this.ens = ens;
     this.node = node;
     this.instancePromise = ens.registryPromise.then(function(registry) {
@@ -117,7 +117,7 @@ function Resolver_1_X(ens, node, contract) {
  * resolverAddress returns the address of the resolver.
  * @returns A promise for the address of the resolver.
  */
-Resolver_1_X.prototype.resolverAddress = function() {
+Resolver_1.prototype.resolverAddress = function() {
   return this.instancePromise.then(function(instance) {
     return instance._address;
   });
@@ -127,7 +127,7 @@ Resolver_1_X.prototype.resolverAddress = function() {
  * reverseAddr looks up the reverse record for the address returned by the resolver's addr()
  * @returns A promise for the Resolver for the reverse record.
  */
-Resolver_1_X.prototype.reverseAddr = function() {
+Resolver_1.prototype.reverseAddr = function() {
     return this.addr().then(function(addr) {
       return this.ens.reverse(addr);
     }).bind(this);
@@ -139,7 +139,7 @@ Resolver_1_X.prototype.reverseAddr = function() {
  * @param {bool} Optional. If false, do not look up the ABI on the reverse entry.
  * @returns {object} A promise for the contract ABI.
  */
-Resolver_1_X.prototype.abi = function(reverse) {
+Resolver_1.prototype.abi = function(reverse) {
   return this.instancePromise.then(function(instance) {
     return instance.methods.ABI(this.node, supportedDecoders).call().then(function(result) {;
       if(result[0] == 0) {
@@ -161,7 +161,7 @@ Resolver_1_X.prototype.abi = function(reverse) {
  * was found. The returned contract object will not be promisifed or otherwise modified.
  * @returns {object} A promise for the contract instance.
  */
-Resolver_1_X.prototype.contract = function() {
+Resolver_1.prototype.contract = function() {
   return Promise.join(this.abi(), this.addr(), function(abi, addr) {
     return new this.ens.web3.eth.Contract(abi, addr);
   }.bind(this));
@@ -240,7 +240,7 @@ ENS_1.NameNotFound = Error("ENS name not found");
 ENS_1.prototype.resolver = function(name, abi) {
     abi = abi || resolverInterface;
     var node = namehash.hash(name);
-    return new Resolver_1_X(this, node, new this.web3.eth.Contract(abi));
+    return new Resolver_1(this, node, new this.web3.eth.Contract(abi));
 };
 
 /**
@@ -340,7 +340,7 @@ ENS_1.prototype.setSubnodeOwner = function(name, addr, params) {
 /**
  * @class
  */
-function Resolver_0_X(ens, node, contract) {
+function Resolver_0(ens, node, contract) {
     this.ens = ens;
     this.node = node;
     this.instancePromise = ens.registryPromise.then(function(registry) {
@@ -366,7 +366,7 @@ function Resolver_0_X(ens, node, contract) {
  * resolverAddress returns the address of the resolver.
  * @returns A promise for the address of the resolver.
  */
-Resolver_0_X.prototype.resolverAddress = function() {
+Resolver_0.prototype.resolverAddress = function() {
   return this.instancePromise.then(function(instance) {
     return instance.address;
   });
@@ -376,7 +376,7 @@ Resolver_0_X.prototype.resolverAddress = function() {
  * reverseAddr looks up the reverse record for the address returned by the resolver's addr()
  * @returns A promise for the Resolver for the reverse record.
  */
-Resolver_0_X.prototype.reverseAddr = function() {
+Resolver_0.prototype.reverseAddr = function() {
     return this.addr().then(function(addr) {
       return this.ens.reverse(addr);
     }).bind(this);
@@ -388,7 +388,7 @@ Resolver_0_X.prototype.reverseAddr = function() {
  * @param {bool} Optional. If false, do not look up the ABI on the reverse entry.
  * @returns {object} A promise for the contract ABI.
  */
-Resolver_0_X.prototype.abi = function(reverse) {
+Resolver_0.prototype.abi = function(reverse) {
   return this.instancePromise.then(function(instance) {
     return instance.ABIAsync(this.node, supportedDecoders).then(function(result) {
       if(result[0] == 0) {
@@ -410,7 +410,7 @@ Resolver_0_X.prototype.abi = function(reverse) {
  * was found. The returned contract object will not be promisifed or otherwise modified.
  * @returns {object} A promise for the contract instance.
  */
-Resolver_0_X.prototype.contract = function() {
+Resolver_0.prototype.contract = function() {
   return Promise.join(this.abi(), this.addr(), function(abi, addr) {
     return this.ens.web3.eth.contract(abi).at(addr);
   }.bind(this));
@@ -486,7 +486,7 @@ ENS_0.NameNotFound = Error("ENS name not found");
 ENS_0.prototype.resolver = function(name, abi) {
     abi = abi || resolverInterface;
     var node = namehash.hash(name);
-    return new Resolver_0_X(this, node, this.web3.eth.contract(abi));
+    return new Resolver_0(this, node, this.web3.eth.contract(abi));
 };
 
 /**

@@ -1,5 +1,5 @@
 var ENS = require('../index.js');
-
+var web3Utils = require('web3-utils');
 var assert = require('assert');
 var async = require('async');
 var fs = require('fs');
@@ -32,7 +32,7 @@ require('events').EventEmitter.prototype._maxListeners = 100;
 describe('ENS (Web3 1.x)', function() {
 	var web3 = new Web3_1();
 	before(function(done) {
-		this.timeout(50000);
+		this.timeout(20000);
 		web3.setProvider(TestRPC.provider());
 		//web3.setProvider(new web3.providers.HttpProvider('http://localhost:8545'));
 		web3.eth.getAccounts(function(err, acct) {
@@ -91,13 +91,12 @@ describe('ENS (Web3 1.x)', function() {
 
 		it('should implement has()', function(done) {
 			var resolver = ens.resolver('foo.eth');
-
 			Promise.all([
-				resolver.has(web3.utils.asciiToHex('addr'))
+				resolver.has(web3Utils.asciiToHex('addr'))
 				.then(function(result) {
 					assert.equal(result, true);
 				}),
-				resolver.has(web3.utils.asciiToHex('blah'))
+				resolver.has(web3Utils.asciiToHex('blah'))
 				.then(function(result) {
 					assert.equal(result, false);
 				})
@@ -189,7 +188,7 @@ describe('ENS (Web3 1.x)', function() {
 	describe("#setResolver", function() {
 		it('should permit resolver updates', function(done) {
 			var addr = '0x2341234123412341234123412341234123412341';
-			ens.setResolver('baz.bar.eth', addr).then(function(txid) {
+			ens.setResolver('baz.bar.eth', addr, {from: accounts[0]}).then(function(txid) {
 				return ens.resolver('baz.bar.eth').resolverAddress().then(function(address) {
 					assert.equal(address, addr);
 					done();
@@ -201,7 +200,8 @@ describe('ENS (Web3 1.x)', function() {
 	describe("#setOwner", function() {
 		it('should permit owner updates', function(done) {
 			var addr = '0x3412341234123412341234123412341234123412';
-			ens.setOwner('baz.bar.eth', addr).then(function(txid) {
+			ens.setOwner('baz.bar.eth', addr, {from: accounts[0]})
+			.then(function(txid) {
 				return ens.owner('baz.bar.eth').then(function(owner) {
 					assert.equal(owner, addr);
 					done();
@@ -234,10 +234,8 @@ describe('ENS (Web3 0.x)', function() {
 		this.timeout(20000);
 		web3.setProvider(TestRPC.provider());
 		//web3.setProvider(new web3.providers.HttpProvider('http://localhost:8545'));
-
 		web3.eth.getAccounts(function(err, acct) {
 			accounts = acct
-
 			var source = fs.readFileSync('test/ens.sol').toString();
 			var compiled = solc.compile(source, 1);
 			assert.equal(compiled.errors, undefined);
@@ -274,8 +272,9 @@ describe('ENS (Web3 0.x)', function() {
 		});
 
 		it('should resolve names', function(done) {
-			ens.resolver('foo.eth').addr().then(function(result) {
-				assert.equal(result.toUpperCase(), deployens.address.toUpperCase());
+			ens.resolver('foo.eth').addr()
+			.then(function(result) {
+				assert.equal(result, deployens.address);
 				done();
 			}).catch(assert.ifError);
 		});
@@ -283,24 +282,28 @@ describe('ENS (Web3 0.x)', function() {
 		it('should implement has()', function(done) {
 			var resolver = ens.resolver('foo.eth');
 			Promise.all([
-				resolver.has('addr').then(function(result) {
+				resolver.has(web3Utils.asciiToHex('addr'))
+				.then(function(result) {
 					assert.equal(result, true);
 				}),
-				resolver.has('blah').then(function(result) {
+				resolver.has(web3Utils.asciiToHex('blah'))
+				.then(function(result) {
 					assert.equal(result, false);
 				}),
 			]).catch(assert.ifError).then(function(result) {done()});
 		});
 
 		it('should error when the name record does not exist', function(done) {
-			ens.resolver('bar.eth').addr().catch(function(err) {
+			ens.resolver('bar.eth').addr()
+			.catch(function(err) {
 				assert.ok(err.toString().indexOf('invalid JUMP') != -1, err);
 				done();
 			});
 		});
 
 		it('should error when the name does not exist', function(done) {
-			ens.resolver('quux.eth').addr().catch(function(err) {
+			ens.resolver('quux.eth').addr()
+			.catch(function(err) {
 				assert.equal(err, ENS.NameNotFound);
 				done();
 			});
@@ -308,8 +311,10 @@ describe('ENS (Web3 0.x)', function() {
 
 		it('should permit name updates', function(done) {
 			var resolver = ens.resolver('bar.eth')
-			resolver.setAddr('0x12345', {from: accounts[0]}).then(function(result) {
-				return resolver.addr().then(function(result) {
+			resolver.setAddr('0x12345', {from: accounts[0]})
+			.then(function(result) {
+				return resolver.addr()
+				.then(function(result) {
 					assert.equal(result, '0x0000000000000000000000000000000000012345');
 					done();
 				});
@@ -327,7 +332,8 @@ describe('ENS (Web3 0.x)', function() {
 		});
 
 		it('should fetch ABIs from names', function(done) {
-			ens.resolver('foo.eth').abi().then(function(abi) {
+			ens.resolver('foo.eth').abi()
+			.then(function(abi) {
 				assert.equal(abi.length, 2);
 				assert.equal(abi[0].name, "test2");
 				done();
@@ -385,7 +391,8 @@ describe('ENS (Web3 0.x)', function() {
 	describe("#setOwner", function() {
 		it('should permit owner updates', function(done) {
 			var addr = '0x3412341234123412341234123412341234123412';
-			ens.setOwner('baz.bar.eth', addr, {from: accounts[0]}).then(function(txid) {
+			ens.setOwner('baz.bar.eth', addr, {from: accounts[0]})
+			.then(function(txid) {
 				return ens.owner('baz.bar.eth').then(function(owner) {
 					assert.equal(owner, addr);
 					done();
@@ -396,7 +403,8 @@ describe('ENS (Web3 0.x)', function() {
 
 	describe("#reverse", function() {
 		it('should look up reverse DNS records', function(done) {
-			ens.reverse(deployens.address).name().then(function(result) {
+			ens.reverse(deployens.address).name()
+			.then(function(result) {
 				assert.equal(result, 'deployer.eth');
 				done();
 			}).catch(assert.isError);

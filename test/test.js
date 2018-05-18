@@ -10,8 +10,8 @@ var niv = require('npm-install-version');
 niv.install('web3@1.0.0-beta.34');
 niv.install('web3@0.20.6');
 
-var Web3_0_x = niv.require('web3@0.20.6');
-var Web3_1_x = niv.require('web3@1.0.0-beta.34');
+var Web3_0 = niv.require('web3@0.20.6');
+var Web3_1 = niv.require('web3@1.0.0-beta.34');
 
 
 var ens = null;
@@ -23,14 +23,14 @@ var registryInterface = [{"constant":true,"inputs":[{"name":"node","type":"bytes
 
 
 // suppressing MaxEventListeners error as we are adding many listeners
-// to the same web3 provider's "data" event when instantiating ENS
+// to the same web3 provider's "data" event for multiple ENS instances
 // https://github.com/ethereum/web3.js/blob/1.0/packages/web3-core-requestmanager/src/index.js#L98
 require('events').EventEmitter.prototype._maxListeners = 100;
 
 
 // Web3 1.x
-describe('ENS', function() {
-	var web3 = new Web3_1_x();
+describe('ENS (Web3 1.x)', function() {
+	var web3 = new Web3_1();
 	before(function(done) {
 		this.timeout(50000);
 		web3.setProvider(TestRPC.provider());
@@ -60,7 +60,7 @@ describe('ENS', function() {
 						if (ens && ens.web3) {
 							ens.web3.reset();
 						}
-						ens = new ENS(web3.currentProvider, ensRoot, Web3_1_x);
+						ens = new ENS(web3.currentProvider, ensRoot, Web3_1);
 						done();
 					}).catch(function(err) {
 						assert.fail(err);
@@ -228,8 +228,8 @@ accounts = null;
 deployens = null;
 
 // Web3 0.x
-describe('ENS', function() {
-	var web3 = new Web3_0_x();
+describe('ENS (Web3 0.x)', function() {
+	var web3 = new Web3_0();
 	before(function(done) {
 		this.timeout(20000);
 		web3.setProvider(TestRPC.provider());
@@ -257,7 +257,7 @@ describe('ENS', function() {
 			   	 		contract.ens.call(function(err, value) {
 			   	 			assert.equal(err, null, err);
 			   	 			ensRoot = value;
-							ens = new ENS(web3.currentProvider, ensRoot, Web3_0_x);
+							ens = new ENS(web3.currentProvider, ensRoot, Web3_0);
 			   	 			done();
 			   	 		});
 				   	 }

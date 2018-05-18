@@ -15,251 +15,15 @@
 var namehash = require('eth-ens-namehash')
 var pako = require('pako');
 var Promise = require('bluebird');
-var sha3 = require('js-sha3').keccak_256
 var textEncoding = require('text-encoding');
 var TextDecoder = textEncoding.TextDecoder;
 var _ = require('underscore');
 var Web3 = require('web3');
+var utils = require('./src/utils.js');
+var abi = require('./src/abi.js');
 
-var WEB3_VERSION_0_X = !!/^0\./.exec(Web3.version);
-
-var registryInterface = [
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "node",
-        "type": "bytes32"
-      }
-    ],
-    "name": "resolver",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "node",
-        "type": "bytes32"
-      }
-    ],
-    "name": "owner",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "node",
-        "type": "bytes32"
-      },
-      {
-        "name": "resolver",
-        "type": "address"
-      }
-    ],
-    "name": "setResolver",
-    "outputs": [],
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "node",
-        "type": "bytes32"
-      },
-      {
-        "name": "label",
-        "type": "bytes32"
-      },
-      {
-        "name": "owner",
-        "type": "address"
-      }
-    ],
-    "name": "setSubnodeOwner",
-    "outputs": [],
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "node",
-        "type": "bytes32"
-      },
-      {
-        "name": "owner",
-        "type": "address"
-      }
-    ],
-    "name": "setOwner",
-    "outputs": [],
-    "type": "function"
-  }
-];
-
-var resolverInterface = [
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "node",
-        "type": "bytes32"
-      }
-    ],
-    "name": "addr",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "node",
-        "type": "bytes32"
-      }
-    ],
-    "name": "content",
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "node",
-        "type": "bytes32"
-      }
-    ],
-    "name": "name",
-    "outputs": [
-      {
-        "name": "",
-        "type": "string"
-      }
-    ],
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "node",
-        "type": "bytes32"
-      },
-      {
-        "name": "kind",
-        "type": "bytes32"
-      }
-    ],
-    "name": "has",
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "node",
-        "type": "bytes32"
-      },
-      {
-        "name": "addr",
-        "type": "address"
-      }
-    ],
-    "name": "setAddr",
-    "outputs": [],
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "node",
-        "type": "bytes32"
-      },
-      {
-        "name": "hash",
-        "type": "bytes32"
-      }
-    ],
-    "name": "setContent",
-    "outputs": [],
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "node",
-        "type": "bytes32"
-      },
-      {
-        "name": "name",
-        "type": "string"
-      }
-    ],
-    "name": "setName",
-    "outputs": [],
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "node",
-        "type": "bytes32"
-      },
-      {
-        "name": "contentType",
-        "type": "uint256"
-      }
-    ],
-    "name": "ABI",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      },
-      {
-        "name": "",
-        "type": "bytes"
-      }
-    ],
-    "payable": false,
-    "type": "function"
-  }
-];
+var registryInterface = abi.registryInterface;
+var resolverInterface = abi.resolverInterface;
 
 var registryAddresses = {
   // Mainnet
@@ -268,29 +32,7 @@ var registryAddresses = {
   "3": "0x112234455c3a32fd11230c42e7bccd4a84e02010",
   // Rinkeby
   "4": "0xe7410170f87102DF0055eB195163A03B7F2Bff4A",
-}
-
-function fromHex(x) {
-  if(x.startsWith("0x")) {
-    x = x.slice(2);
-  }
-
-  var ret = new Uint8Array(x.length / 2);
-  for(var i = 0; i < ret.length; i++) {
-    ret[i] = parseInt(x.slice(i * 2, i * 2 + 2), 16);
-  }
-
-  return ret;
 };
-
-function parentNamehash(name) {
-    var dot = name.indexOf('.');
-    if(dot == -1) {
-        return ['0x' + sha3(namehash.normalize(name)), namehash.hash('')];
-    } else {
-        return ['0x' + sha3(namehash.normalize(name.slice(0, dot))), namehash.hash(name.slice(dot + 1))];
-    }
-}
 
 var abiDecoders = {
   1: function(data) {
@@ -302,27 +44,21 @@ var abiDecoders = {
     return JSON.parse(data);
   }
 };
+
 var supportedDecoders = _.reduce(_.keys(abiDecoders), function(memo, val) { return memo | val; });
 
-function construct(constructor, args) {
-    function F() {
-        return constructor.apply(this, args);
-    }
-    F.prototype = constructor.prototype;
-    return new F();
-}
-
 /**
- * Wrapper
+ * Wrapper function that returns a version of ENS that is compatible
+ * with the provided version of Web3
  */
-function ENS (provider, address, web3) {
-  if (web3 !== undefined) {
-    Web3 = web3;
+function ENS (provider, address, Web3js) {
+  if (Web3js !== undefined) {
+    Web3 = Web3js;
   }
   if (!!/^0\./.exec(Web3.version || (new Web3()).version.api)) {
-    return construct(ENS_0_X, [provider, address]);
+    return utils.construct(ENS_0, [provider, address]);
   } else {
-    return construct(ENS_1_X, [provider, address]);
+    return utils.construct(ENS_1, [provider, address]);
   }
 }
 
@@ -412,7 +148,7 @@ Resolver_1_X.prototype.abi = function(reverse) {
           return reverse.abi(false);
         });
       } else {
-        return abiDecoders[result[0]](fromHex(result[1]));
+        return abiDecoders[result[0]](utils.fromHex(result[1]));
       }
     }.bind(this));
   }.bind(this));
@@ -465,7 +201,7 @@ Resolver_1_X.prototype.contract = function() {
  * @param {object} provider A web3 provider to use to communicate with the blockchain.
  * @param {address} address Optional. The address of the ENS registry. Defaults to the public ENS registry.
  */
-function ENS_1_X(provider, address) {
+function ENS_1(provider, address) {
     // Ensures backwards compatibility
     if (provider.currentProvider) {
         provider = provider.currentProvider;
@@ -485,7 +221,7 @@ function ENS_1_X(provider, address) {
     }
 }
 
-ENS_1_X.NameNotFound = Error("ENS name not found");
+ENS_1.NameNotFound = Error("ENS name not found");
 
 /**
  * resolver returns a resolver object for the specified name, throwing
@@ -501,7 +237,7 @@ ENS_1_X.NameNotFound = Error("ENS name not found");
  *        `setName` and `setAddr` is supplied.
  * @returns The resolver object.
  */
-ENS_1_X.prototype.resolver = function(name, abi) {
+ENS_1.prototype.resolver = function(name, abi) {
     abi = abi || resolverInterface;
     var node = namehash.hash(name);
     return new Resolver_1_X(this, node, new this.web3.eth.Contract(abi));
@@ -521,7 +257,7 @@ ENS_1_X.prototype.resolver = function(name, abi) {
  *        `setName` and `setAddr` is supplied.
  * @returns The resolver object.
  */
-ENS_1_X.prototype.reverse = function(address, abi) {
+ENS_1.prototype.reverse = function(address, abi) {
     if(address.startsWith("0x"))
       address = address.slice(2);
     return this.resolver(address.toLowerCase() + ".addr.reverse", abi);
@@ -536,7 +272,7 @@ ENS_1_X.prototype.reverse = function(address, abi) {
  * @param {object} options An optional dict of parameters to pass to web3.
  * @returns A promise that returns the transaction ID when the transaction is mined.
  */
-ENS_1_X.prototype.setResolver = function(name, addr, params) {
+ENS_1.prototype.setResolver = function(name, addr, params) {
     var node = namehash.hash(name);
 
     return this.registryPromise.then(function(registry) {
@@ -551,7 +287,7 @@ ENS_1_X.prototype.setResolver = function(name, addr, params) {
  * @param {string} name The name to look up.
  * @returns A promise returning the owner address of the specified name.
  */
-ENS_1_X.prototype.owner = function(name, callback) {
+ENS_1.prototype.owner = function(name, callback) {
     var node = namehash.hash(name);
 
     return this.registryPromise.then(function(registry) {
@@ -568,7 +304,7 @@ ENS_1_X.prototype.owner = function(name, callback) {
  * @param {object} options An optional dict of parameters to pass to web3.
  * @returns A promise returning the transaction ID of the transaction, once mined.
  */
-ENS_1_X.prototype.setOwner = function(name, addr, params) {
+ENS_1.prototype.setOwner = function(name, addr, params) {
     var node = namehash.hash(name);
     return this.registryPromise.then(function(registry) {
       return this.web3.eth.getAccounts().then(function(accounts) {
@@ -587,8 +323,8 @@ ENS_1_X.prototype.setOwner = function(name, addr, params) {
  * @param {object} options An optional dict of parameters to pass to web3.
  * @returns A promise returning the transaction ID of the transaction, once mined.
  */
-ENS_1_X.prototype.setSubnodeOwner = function(name, addr, params) {
-    var node = parentNamehash(name);
+ENS_1.prototype.setSubnodeOwner = function(name, addr, params) {
+    var node = utils.parentNamehash(name);
 
     return this.registryPromise.then(function(registry) {
       return this.web3.eth.getAccounts().then(function(accounts) {
@@ -661,7 +397,7 @@ Resolver_0_X.prototype.abi = function(reverse) {
           return reverse.abi(false);
         });
       } else {
-        return abiDecoders[result[0]](fromHex(result[1]));
+        return abiDecoders[result[0]](utils.fromHex(result[1]));
       }
     }.bind(this));
   }.bind(this));
@@ -714,7 +450,7 @@ Resolver_0_X.prototype.contract = function() {
  * @param {object} provider A web3 provider to use to communicate with the blockchain.
  * @param {address} address Optional. The address of the ENS registry. Defaults to the public ENS registry.
  */
-function ENS_0_X(provider, address) {
+function ENS_0(provider, address) {
     // Ensures backwards compatibility
     if (provider.currentProvider) {
         provider = provider.currentProvider;
@@ -731,7 +467,7 @@ function ENS_0_X(provider, address) {
     }
 }
 
-ENS_0_X.NameNotFound = Error("ENS name not found");
+ENS_0.NameNotFound = Error("ENS name not found");
 
 /**
  * resolver returns a resolver object for the specified name, throwing
@@ -747,7 +483,7 @@ ENS_0_X.NameNotFound = Error("ENS name not found");
  *        `setName` and `setAddr` is supplied.
  * @returns The resolver object.
  */
-ENS_0_X.prototype.resolver = function(name, abi) {
+ENS_0.prototype.resolver = function(name, abi) {
     abi = abi || resolverInterface;
     var node = namehash.hash(name);
     return new Resolver_0_X(this, node, this.web3.eth.contract(abi));
@@ -767,7 +503,7 @@ ENS_0_X.prototype.resolver = function(name, abi) {
  *        `setName` and `setAddr` is supplied.
  * @returns The resolver object.
  */
-ENS_0_X.prototype.reverse = function(address, abi) {
+ENS_0.prototype.reverse = function(address, abi) {
     if(address.startsWith("0x"))
       address = address.slice(2);
     return this.resolver(address.toLowerCase() + ".addr.reverse", abi);
@@ -782,7 +518,7 @@ ENS_0_X.prototype.reverse = function(address, abi) {
  * @param {object} options An optional dict of parameters to pass to web3.
  * @returns A promise that returns the transaction ID when the transaction is mined.
  */
-ENS_0_X.prototype.setResolver = function(name, addr, params) {
+ENS_0.prototype.setResolver = function(name, addr, params) {
     var node = namehash.hash(name);
 
     return this.registryPromise.then(function(registry) {
@@ -795,7 +531,7 @@ ENS_0_X.prototype.setResolver = function(name, addr, params) {
  * @param {string} name The name to look up.
  * @returns A promise returning the owner address of the specified name.
  */
-ENS_0_X.prototype.owner = function(name, callback) {
+ENS_0.prototype.owner = function(name, callback) {
     var node = namehash.hash(name);
 
     return this.registryPromise.then(function(registry) {
@@ -812,7 +548,7 @@ ENS_0_X.prototype.owner = function(name, callback) {
  * @param {object} options An optional dict of parameters to pass to web3.
  * @returns A promise returning the transaction ID of the transaction, once mined.
  */
-ENS_0_X.prototype.setOwner = function(name, addr, params) {
+ENS_0.prototype.setOwner = function(name, addr, params) {
     var node = namehash.hash(name);
 
     return this.registryPromise.then(function(registry) {
@@ -830,18 +566,12 @@ ENS_0_X.prototype.setOwner = function(name, addr, params) {
  * @param {object} options An optional dict of parameters to pass to web3.
  * @returns A promise returning the transaction ID of the transaction, once mined.
  */
-ENS_0_X.prototype.setSubnodeOwner = function(name, addr, params) {
-    var node = parentNamehash(name);
+ENS_0.prototype.setSubnodeOwner = function(name, addr, params) {
+    var node = utils.parentNamehash(name);
 
     return this.registryPromise.then(function(registry) {
       return registry.setSubnodeOwnerAsync(node[1], node[0], addr, params);
     });
 }
-
-
-
-
-
-
 
 module.exports = ENS;

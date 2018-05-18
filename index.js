@@ -21,6 +21,8 @@ var TextDecoder = textEncoding.TextDecoder;
 var _ = require('underscore');
 var Web3 = require('web3');
 
+var WEB3_VERSION_0_X = !!/^0\./.exec(Web3.version);
+
 var registryInterface = [
   {
     "constant": true,
@@ -268,10 +270,68 @@ var registryAddresses = {
   "4": "0xe7410170f87102DF0055eB195163A03B7F2Bff4A",
 }
 
+function fromHex(x) {
+  if(x.startsWith("0x")) {
+    x = x.slice(2);
+  }
+
+  var ret = new Uint8Array(x.length / 2);
+  for(var i = 0; i < ret.length; i++) {
+    ret[i] = parseInt(x.slice(i * 2, i * 2 + 2), 16);
+  }
+
+  return ret;
+};
+
+function parentNamehash(name) {
+    var dot = name.indexOf('.');
+    if(dot == -1) {
+        return ['0x' + sha3(namehash.normalize(name)), namehash.hash('')];
+    } else {
+        return ['0x' + sha3(namehash.normalize(name.slice(0, dot))), namehash.hash(name.slice(dot + 1))];
+    }
+}
+
+var abiDecoders = {
+  1: function(data) {
+    data  = new TextDecoder("utf-8").decode(data);
+    return JSON.parse(data);
+  },
+  2: function(data) {
+    data = pako.inflate(data, {to: 'string'});
+    return JSON.parse(data);
+  }
+};
+var supportedDecoders = _.reduce(_.keys(abiDecoders), function(memo, val) { return memo | val; });
+
+function construct(constructor, args) {
+    function F() {
+        return constructor.apply(this, args);
+    }
+    F.prototype = constructor.prototype;
+    return new F();
+}
+
+/**
+ * Wrapper
+ */
+function ENS (provider, address, web3) {
+  if (web3 !== undefined) {
+    Web3 = web3;
+  }
+  if (!!/^0\./.exec(Web3.version || (new Web3()).version.api)) {
+    return construct(ENS_0_X, [provider, address]);
+  } else {
+    return construct(ENS_1_X, [provider, address]);
+  }
+}
+
+ENS.NameNotFound = Error("ENS name not found");
+
 /**
  * @class
  */
-function Resolver(ens, node, contract) {
+function Resolver_1_X(ens, node, contract) {
     this.ens = ens;
     this.node = node;
     this.instancePromise = ens.registryPromise.then(function(registry) {
@@ -317,23 +377,11 @@ function Resolver(ens, node, contract) {
     }.bind(this));
 }
 
-var abiDecoders = {
-  1: function(data) {
-    data  = new TextDecoder("utf-8").decode(data);
-    return JSON.parse(data);
-  },
-  2: function(data) {
-    data = pako.inflate(data, {to: 'string'});
-    return JSON.parse(data);
-  }
-};
-var supportedDecoders = _.reduce(_.keys(abiDecoders), function(memo, val) { return memo | val; });
-
 /**
  * resolverAddress returns the address of the resolver.
  * @returns A promise for the address of the resolver.
  */
-Resolver.prototype.resolverAddress = function() {
+Resolver_1_X.prototype.resolverAddress = function() {
   return this.instancePromise.then(function(instance) {
     return instance._address;
   });
@@ -343,24 +391,11 @@ Resolver.prototype.resolverAddress = function() {
  * reverseAddr looks up the reverse record for the address returned by the resolver's addr()
  * @returns A promise for the Resolver for the reverse record.
  */
-Resolver.prototype.reverseAddr = function() {
+Resolver_1_X.prototype.reverseAddr = function() {
     return this.addr().then(function(addr) {
       return this.ens.reverse(addr);
     }).bind(this);
 }
-
-function fromHex(x) {
-  if(x.startsWith("0x")) {
-    x = x.slice(2);
-  }
-
-  var ret = new Uint8Array(x.length / 2);
-  for(var i = 0; i < ret.length; i++) {
-    ret[i] = parseInt(x.slice(i * 2, i * 2 + 2), 16);
-  }
-
-  return ret;
-};
 
 /**
  * abi returns the ABI associated with the name. Automatically looks for an ABI on the
@@ -368,7 +403,7 @@ function fromHex(x) {
  * @param {bool} Optional. If false, do not look up the ABI on the reverse entry.
  * @returns {object} A promise for the contract ABI.
  */
-Resolver.prototype.abi = function(reverse) {
+Resolver_1_X.prototype.abi = function(reverse) {
   return this.instancePromise.then(function(instance) {
     return instance.methods.ABI(this.node, supportedDecoders).call().then(function(result) {;
       if(result[0] == 0) {
@@ -390,7 +425,7 @@ Resolver.prototype.abi = function(reverse) {
  * was found. The returned contract object will not be promisifed or otherwise modified.
  * @returns {object} A promise for the contract instance.
  */
-Resolver.prototype.contract = function() {
+Resolver_1_X.prototype.contract = function() {
   return Promise.join(this.abi(), this.addr(), function(abi, addr) {
     return new this.ens.web3.eth.Contract(abi, addr);
   }.bind(this));
@@ -430,7 +465,7 @@ Resolver.prototype.contract = function() {
  * @param {object} provider A web3 provider to use to communicate with the blockchain.
  * @param {address} address Optional. The address of the ENS registry. Defaults to the public ENS registry.
  */
-function ENS (provider, address) {
+function ENS_1_X(provider, address) {
     // Ensures backwards compatibility
     if (provider.currentProvider) {
         provider = provider.currentProvider;
@@ -450,16 +485,7 @@ function ENS (provider, address) {
     }
 }
 
-ENS.NameNotFound = Error("ENS name not found");
-
-function parentNamehash(name) {
-    var dot = name.indexOf('.');
-    if(dot == -1) {
-        return ['0x' + sha3(namehash.normalize(name)), namehash.hash('')];
-    } else {
-        return ['0x' + sha3(namehash.normalize(name.slice(0, dot))), namehash.hash(name.slice(dot + 1))];
-    }
-}
+ENS_1_X.NameNotFound = Error("ENS name not found");
 
 /**
  * resolver returns a resolver object for the specified name, throwing
@@ -475,10 +501,10 @@ function parentNamehash(name) {
  *        `setName` and `setAddr` is supplied.
  * @returns The resolver object.
  */
-ENS.prototype.resolver = function(name, abi) {
+ENS_1_X.prototype.resolver = function(name, abi) {
     abi = abi || resolverInterface;
     var node = namehash.hash(name);
-    return new Resolver(this, node, new this.web3.eth.Contract(abi));
+    return new Resolver_1_X(this, node, new this.web3.eth.Contract(abi));
 };
 
 /**
@@ -495,7 +521,7 @@ ENS.prototype.resolver = function(name, abi) {
  *        `setName` and `setAddr` is supplied.
  * @returns The resolver object.
  */
-ENS.prototype.reverse = function(address, abi) {
+ENS_1_X.prototype.reverse = function(address, abi) {
     if(address.startsWith("0x"))
       address = address.slice(2);
     return this.resolver(address.toLowerCase() + ".addr.reverse", abi);
@@ -510,7 +536,7 @@ ENS.prototype.reverse = function(address, abi) {
  * @param {object} options An optional dict of parameters to pass to web3.
  * @returns A promise that returns the transaction ID when the transaction is mined.
  */
-ENS.prototype.setResolver = function(name, addr, params) {
+ENS_1_X.prototype.setResolver = function(name, addr, params) {
     var node = namehash.hash(name);
 
     return this.registryPromise.then(function(registry) {
@@ -525,7 +551,7 @@ ENS.prototype.setResolver = function(name, addr, params) {
  * @param {string} name The name to look up.
  * @returns A promise returning the owner address of the specified name.
  */
-ENS.prototype.owner = function(name, callback) {
+ENS_1_X.prototype.owner = function(name, callback) {
     var node = namehash.hash(name);
 
     return this.registryPromise.then(function(registry) {
@@ -542,7 +568,7 @@ ENS.prototype.owner = function(name, callback) {
  * @param {object} options An optional dict of parameters to pass to web3.
  * @returns A promise returning the transaction ID of the transaction, once mined.
  */
-ENS.prototype.setOwner = function(name, addr, params) {
+ENS_1_X.prototype.setOwner = function(name, addr, params) {
     var node = namehash.hash(name);
     return this.registryPromise.then(function(registry) {
       return this.web3.eth.getAccounts().then(function(accounts) {
@@ -561,7 +587,7 @@ ENS.prototype.setOwner = function(name, addr, params) {
  * @param {object} options An optional dict of parameters to pass to web3.
  * @returns A promise returning the transaction ID of the transaction, once mined.
  */
-ENS.prototype.setSubnodeOwner = function(name, addr, params) {
+ENS_1_X.prototype.setSubnodeOwner = function(name, addr, params) {
     var node = parentNamehash(name);
 
     return this.registryPromise.then(function(registry) {
@@ -570,5 +596,252 @@ ENS.prototype.setSubnodeOwner = function(name, addr, params) {
       });
     }.bind(this));
 }
+
+
+// TODO: ADD A BOUNDARY
+
+
+/**
+ * @class
+ */
+function Resolver_0_X(ens, node, contract) {
+    this.ens = ens;
+    this.node = node;
+    this.instancePromise = ens.registryPromise.then(function(registry) {
+      return registry.resolverAsync(node).then(function(address) {
+        if(address == "0x0000000000000000000000000000000000000000") {
+          return Promise.reject(ENS.NameNotFound);
+        }
+        return Promise.promisifyAll(contract.at(address));
+      });
+    });
+
+    _.each(contract.abi, function(signature) {
+        this[signature.name] = function() {
+          var args = arguments;
+          return this.instancePromise.then(function(instance) {
+            return _.partial(instance[signature.name + 'Async'], node).apply(instance, args);
+          }).bind(this);
+        }.bind(this);
+    }.bind(this));
+}
+
+/**
+ * resolverAddress returns the address of the resolver.
+ * @returns A promise for the address of the resolver.
+ */
+Resolver_0_X.prototype.resolverAddress = function() {
+  return this.instancePromise.then(function(instance) {
+    return instance.address;
+  });
+}
+
+/**
+ * reverseAddr looks up the reverse record for the address returned by the resolver's addr()
+ * @returns A promise for the Resolver for the reverse record.
+ */
+Resolver_0_X.prototype.reverseAddr = function() {
+    return this.addr().then(function(addr) {
+      return this.ens.reverse(addr);
+    }).bind(this);
+}
+
+/**
+ * abi returns the ABI associated with the name. Automatically looks for an ABI on the
+ *     reverse record if none is found on the name itself.
+ * @param {bool} Optional. If false, do not look up the ABI on the reverse entry.
+ * @returns {object} A promise for the contract ABI.
+ */
+Resolver_0_X.prototype.abi = function(reverse) {
+  return this.instancePromise.then(function(instance) {
+    return instance.ABIAsync(this.node, supportedDecoders).then(function(result) {
+      if(result[0] == 0) {
+        if(reverse == false) return null;
+        return this.reverseAddr().then(function(reverse) {
+          return reverse.abi(false);
+        });
+      } else {
+        return abiDecoders[result[0]](fromHex(result[1]));
+      }
+    }.bind(this));
+  }.bind(this));
+};
+
+/**
+ * contract returns a web3 contract object. The address is that returned by this resolver's
+ * `addr()`, and the ABI is loaded from this resolver's `ABI()` method, or the ABI on the
+ * reverse record if that's not found. Returns null if no address is specified or no ABI
+ * was found. The returned contract object will not be promisifed or otherwise modified.
+ * @returns {object} A promise for the contract instance.
+ */
+Resolver_0_X.prototype.contract = function() {
+  return Promise.join(this.abi(), this.addr(), function(abi, addr) {
+    return this.ens.web3.eth.contract(abi).at(addr);
+  }.bind(this));
+};
+
+/**
+ * @class
+ *
+ * @description Provides an easy-to-use interface to the Ethereum Name Service.
+ *
+ * Example usage:
+ *
+ *     var ENS = require('ethereum-ens');
+ *     var Web3 = require('web3');
+ *
+ *     var web3 = new Web3();
+ *     var ens = new ENS(web3);
+ *
+ *     var address = ens.resolver('foo.eth').addr().then(function(addr) { ... });
+ *
+ * Functions that require communicating with the node return promises, rather than
+ * using callbacks. A promise has a `then` function, which takes a callback and will
+ * call it when the promise is fulfilled; `then` returns another promise, so you can
+ * chain callbacks. For more details, see http://bluebirdjs.com/.
+ *
+ * Notably, the `resolver` method returns a resolver instance immediately; lookup of
+ * the resolver address is done in the background or when you first call an asynchronous
+ * method on the resolver.
+ *
+ * Functions that create transactions also take an optional 'options' argument;
+ * this has the same parameters as web3.
+ *
+ * @author Nick Johnson <nick@ethereum.org>
+ * @date 2016
+ * @license LGPL
+ *
+ * @param {object} provider A web3 provider to use to communicate with the blockchain.
+ * @param {address} address Optional. The address of the ENS registry. Defaults to the public ENS registry.
+ */
+function ENS_0_X(provider, address) {
+    // Ensures backwards compatibility
+    if (provider.currentProvider) {
+        provider = provider.currentProvider;
+    }
+
+    this.web3 = new Web3(provider);
+    var registryContract = this.web3.eth.contract(registryInterface);
+    if(address != undefined) {
+      this.registryPromise = Promise.resolve(Promise.promisifyAll(registryContract.at(address)));
+    } else {
+      this.registryPromise = Promise.promisify(this.web3.version.getNetwork)().then(function(version) {
+        return Promise.promisifyAll(registryContract.at(registryAddresses[version]));
+      });
+    }
+}
+
+ENS_0_X.NameNotFound = Error("ENS name not found");
+
+/**
+ * resolver returns a resolver object for the specified name, throwing
+ * ENS.NameNotFound if the name does not exist in ENS.
+ * Resolver objects are wrappers around web3 contract objects, with the
+ * first argument - always the node ID in an ENS resolver - automatically
+ * supplied. So, to call the `addr(node)` function on a standard resolver,
+ * you only have to call `addr()`. Returned objects are also 'promisified' - they
+ * return a Bluebird Promise object instead of taking a callback.
+ * @param {string} name The name to look up.
+ * @param {list} abi Optional. The JSON ABI definition to use for the resolver.
+ *        if none is supplied, a default definition implementing `has`, `addr`, `name`,
+ *        `setName` and `setAddr` is supplied.
+ * @returns The resolver object.
+ */
+ENS_0_X.prototype.resolver = function(name, abi) {
+    abi = abi || resolverInterface;
+    var node = namehash.hash(name);
+    return new Resolver_0_X(this, node, this.web3.eth.contract(abi));
+};
+
+/**
+ * reverse returns a resolver object for the reverse resolution of the specified address,
+ * throwing ENS.NameNotFound if the reverse record does not exist in ENS.
+ * Resolver objects are wrappers around web3 contract objects, with the
+ * first argument - always the node ID in an ENS resolver - automatically
+ * supplied. So, to call the `addr(node)` function on a standard resolver,
+ * you only have to call `addr()`. Returned objects are also 'promisified' - they
+ * return a Bluebird Promise object instead of taking a callback.
+ * @param {string} address The address to look up.
+ * @param {list} abi Optional. The JSON ABI definition to use for the resolver.
+ *        if none is supplied, a default definition implementing `has`, `addr`, `name`,
+ *        `setName` and `setAddr` is supplied.
+ * @returns The resolver object.
+ */
+ENS_0_X.prototype.reverse = function(address, abi) {
+    if(address.startsWith("0x"))
+      address = address.slice(2);
+    return this.resolver(address.toLowerCase() + ".addr.reverse", abi);
+};
+
+/**
+ * setResolver sets the address of the resolver contract for the specified name.
+ * The calling account must be the owner of the name in order for this call to
+ * succeed.
+ * @param {string} name The name to update
+ * @param {address} address The address of the resolver
+ * @param {object} options An optional dict of parameters to pass to web3.
+ * @returns A promise that returns the transaction ID when the transaction is mined.
+ */
+ENS_0_X.prototype.setResolver = function(name, addr, params) {
+    var node = namehash.hash(name);
+
+    return this.registryPromise.then(function(registry) {
+      return registry.setResolverAsync(node, addr, params);
+    });
+}
+
+/**
+ * owner returns the address of the owner of the specified name.
+ * @param {string} name The name to look up.
+ * @returns A promise returning the owner address of the specified name.
+ */
+ENS_0_X.prototype.owner = function(name, callback) {
+    var node = namehash.hash(name);
+
+    return this.registryPromise.then(function(registry) {
+      return registry.ownerAsync(node);
+    });
+}
+
+/**
+ * setOwner sets the owner of the specified name. Only the owner may call
+ * setResolver or setSubnodeOwner. The calling account must be the current
+ * owner of the name in order for this call to succeed.
+ * @param {string} name The name to update
+ * @param {address} address The address of the new owner
+ * @param {object} options An optional dict of parameters to pass to web3.
+ * @returns A promise returning the transaction ID of the transaction, once mined.
+ */
+ENS_0_X.prototype.setOwner = function(name, addr, params) {
+    var node = namehash.hash(name);
+
+    return this.registryPromise.then(function(registry) {
+      return registry.setOwnerAsync(node, addr, params);
+    });
+}
+
+/**
+ * setSubnodeOwner sets the owner of the specified name. The calling account
+ * must be the owner of the parent name in order for this call to succeed -
+ * for example, to call setSubnodeOwner on 'foo.bar.eth', the caller must be
+ * the owner of 'bar.eth'.
+ * @param {string} name The name to update
+ * @param {address} address The address of the new owner
+ * @param {object} options An optional dict of parameters to pass to web3.
+ * @returns A promise returning the transaction ID of the transaction, once mined.
+ */
+ENS_0_X.prototype.setSubnodeOwner = function(name, addr, params) {
+    var node = parentNamehash(name);
+
+    return this.registryPromise.then(function(registry) {
+      return registry.setSubnodeOwnerAsync(node[1], node[0], addr, params);
+    });
+}
+
+
+
+
+
+
 
 module.exports = ENS;

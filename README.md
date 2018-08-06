@@ -47,14 +47,15 @@ Provides an easy-to-use interface to the Ethereum Name Service.
 
 Example usage:
 
-    var ENS = require('ethereum-ens');
-    var Web3 = require('web3');
+```javascript
+var ENS = require('ethereum-ens');
+var Web3 = require('web3');
 
-    var provider = new Web3.providers.HttpProvider();
-    var ens = new ENS(provider);
+var provider = new Web3.providers.HttpProvider();
+var ens = new ENS(provider);
 
-    var address = ens.resolver('foo.eth').addr().then(function(addr) { ... });
-
+var address = ens.resolver('foo.eth').addr().then(function(addr) { ... });
+```
 Functions that require communicating with the node return promises, rather than
 using callbacks. A promise has a `then` function, which takes a callback and will
 call it when the promise is fulfilled; `then` returns another promise, so you can

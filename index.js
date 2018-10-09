@@ -209,15 +209,16 @@ function ENS_1(provider, address) {
 
     this.web3 = new Web3(provider);
     var registryContract = new this.web3.eth.Contract(registryInterface);
-    if(address != undefined) {
+    if (address != undefined) {
       registryContract.options.address = address;
-
       this.registryPromise = Promise.resolve(registryContract);
     } else {
-      this.registryPromise = this.web3.eth.net.getId().then(function(version) {
-        registryContract.options.address = registryAddresses[version];
-        return registryContract;
-      });
+      this.registryPromise = new Promise((resolve) => {
+        this.web3.eth.net.getId().then(function(version) {
+            registryContract.options.address = registryAddresses[version];
+            resolve(registryContract);
+        });
+      })
     }
 }
 

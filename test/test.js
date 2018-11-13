@@ -1,7 +1,6 @@
 var ENS = require('../index.js');
 var web3Utils = require('web3-utils');
 var assert = require('assert');
-var async = require('async');
 var fs = require('fs');
 var solc = require('solc');
 var TestRPC = require('ganache-cli');

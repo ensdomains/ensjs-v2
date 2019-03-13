@@ -1,6 +1,6 @@
 {
   "name": "ethereum-ens",
-  "version": "0.7.5",
+  "version": "0.7.6",
   "homepage": "https://github.com/Arachnid/ensjs#readme",
   "description": "Javascript bindings for the Ethereum Name Service",
   "main": "index.js",

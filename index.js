@@ -57,7 +57,7 @@ function ENS (provider, address, Web3js) {
   if (Web3js !== undefined) {
     Web3 = Web3js;
   }
-  if (!!/^0\./.exec(Web3.version || (new Web3()).version.api)) {
+  if (!!/^0\./.exec(Web3.version || (new Web3(provider)).version.api)) {
     return utils.construct(ENS_0, [provider, address]);
   } else {
     return utils.construct(ENS_1, [provider, address]);

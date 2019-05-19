@@ -31,7 +31,10 @@
     "pako": "^1.0.4",
     "text-encoding": "^0.6.4",
     "underscore": "^1.8.3",
-    "web3": "^1.0.0-beta.34"
+    "web3": "^1.0.0-beta.34",
+    "web337": "npm:web3@1.0.0-beta.37",
+    "web338": "npm:web3@1.0.0-beta.38",
+    "web355": "npm:web3@1.0.0-beta.55"
   },
   "devDependencies": {
     "ganache-cli": "^6.4.1",

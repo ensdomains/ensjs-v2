@@ -6,11 +6,21 @@ var solc = require('solc');
 var TestRPC = require('ganache-cli');
 
 var niv = require('npm-install-version');
-niv.install('web3@1.0.0-beta.34');
-niv.install('web3@0.20.6');
+// niv.install('web3@1.0.0-beta.34', {destination: '../node_modules'});
+// niv.install('web3@1.0.0-beta.37', {destination: '../node_modules'});
+// niv.install('web3@1.0.0-beta.38', {destination: '../node_modules'});
+// niv.install('web3@1.0.0-beta.55', {destination: '../node_modules'});
 
-var Web3_0 = niv.require('web3@0.20.6');
-var Web3_1 = niv.require('web3@1.0.0-beta.34');
+// niv.install('web3@1.0.0-beta.37');
+// niv.install('web3@1.0.0-beta.38');
+// niv.install('web3@1.0.0-beta.55');
+// niv.install('web3@0.20.6', {destination: '../node_modules'});
+
+// var Web3_0 = niv.require('web3@0.20.6');
+var Web3_1 = niv.require('web3@1.0.0-beta.37');
+var Web3_137 = niv.require('web3@1.0.0-beta.37');
+var Web3_138 = niv.require('web3@1.0.0-beta.38');
+var Web3_155 = niv.require('web3@1.0.0-beta.55');
 
 var ens = null;
 var ensRoot = null;
@@ -184,9 +194,16 @@ var testSuiteGenerator = function(beforeHook, afterHook) {
 
 describe('ENS (Web3 1.x)', testSuiteGenerator(
 	function(done) {
-		if (web3 === null) {
-			web3 = new Web3_1();
-		}
+		// if (web3 === null) {
+		web3 = new Web3_1();
+		// new Web3_137(web338.currentProvider);
+		// new Web3_137(web355.currentProvider);
+		// new Web3_138(web337.currentProvider);
+		// new Web3_138(web355.currentProvider);
+		// new Web3_155(web337.currentProvider);
+		// new Web3_155(web338.currentProvider);
+
+		// }
 		this.timeout(20000);
 		web3.setProvider(TestRPC.provider());
 		//web3.setProvider(new web3.providers.HttpProvider('http://localhost:8545'));
@@ -215,12 +232,26 @@ describe('ENS (Web3 1.x)', testSuiteGenerator(
 						if (ens && ens.web3) {
 							ens.web3.reset();
 						}
-						ens = new ENS(web3.currentProvider, ensRoot, Web3_1);
+
+						web337 = new Web3_137('https://');
+						web338 = new Web3_138('https://');
+						// web355 = new Web3_155();
+				
+						// ens = new ENS(web3.currentProvider, ensRoot);
+						console.log('***1')
+						web337.setProvider(TestRPC.provider());
+						ens = new ENS(web337.currentProvider, ensRoot);
+						console.log('***2')
+						// ens = new ENS(web338.currentProvider, ensRoot);
+						console.log('***3')
+						// ens = new ENS(web355.currentProvider, ensRoot);
+						// console.log('***4')
 						deployensAddress = deployens.address || deployens._address;
 						done();
-					}).catch(function(err) {
-						assert.ifError(err);
 					})
+					// .catch(function(err) {
+					// 	assert.ifError(err);
+					// })
 				} else {
 					assert.ifError("Contract address is null", contract);
 				}
@@ -239,39 +270,39 @@ describe('ENS (Web3 1.x)', testSuiteGenerator(
 ));
 
 
-describe('ENS (Web3 0.x)', testSuiteGenerator(function(done) {
-	this.timeout(20000);
-	if (web3 === null) {
-		web3 = new Web3_0();
-	}
-	web3.setProvider(TestRPC.provider());
-	//web3.setProvider(new web3.providers.HttpProvider('http://localhost:8545'));
-	web3.eth.getAccounts(function(err, acct) {
-		accounts = acct
-		var source = fs.readFileSync('test/ens.sol').toString();
-		var compiled = solc.compile(source, 1);
-		assert.equal(compiled.errors, undefined);
-		var deployer = compiled.contracts[':DeployENS'];
-		var deployensContract = web3.eth.contract(JSON.parse(deployer.interface));
+// describe('ENS (Web3 0.x)', testSuiteGenerator(function(done) {
+// 	this.timeout(20000);
+// 	if (web3 === null) {
+// 		web3 = new Web3_0();
+// 	}
+// 	web3.setProvider(TestRPC.provider());
+// 	//web3.setProvider(new web3.providers.HttpProvider('http://localhost:8545'));
+// 	web3.eth.getAccounts(function(err, acct) {
+// 		accounts = acct
+// 		var source = fs.readFileSync('test/ens.sol').toString();
+// 		var compiled = solc.compile(source, 1);
+// 		assert.equal(compiled.errors, undefined);
+// 		var deployer = compiled.contracts[':DeployENS'];
+// 		var deployensContract = web3.eth.contract(JSON.parse(deployer.interface));
 
-		// Deploy the contract
-		deployens = deployensContract.new(
-		   {
-		     from: accounts[0],
-		     data: deployer.bytecode,
-		     gas: 4700000
-		   }, function(err, contract) {
-		   	    assert.equal(err, null, err);
-		   	    if(contract.address != undefined) {
-		   	    	// Fetch the address of the ENS registry
-		   	 		contract.ens.call(function(err, value) {
-		   	 			assert.equal(err, null, err);
-		   	 			ensRoot = value;
-							ens = new ENS(web3.currentProvider, ensRoot, Web3_0);
-							deployensAddress = deployens.address || deployens._address;
-		   	 			done();
-		   	 		});
-			   	 }
-		   });
-	});
-}));
+// 		// Deploy the contract
+// 		deployens = deployensContract.new(
+// 		   {
+// 		     from: accounts[0],
+// 		     data: deployer.bytecode,
+// 		     gas: 4700000
+// 		   }, function(err, contract) {
+// 		   	    assert.equal(err, null, err);
+// 		   	    if(contract.address != undefined) {
+// 		   	    	// Fetch the address of the ENS registry
+// 		   	 		contract.ens.call(function(err, value) {
+// 		   	 			assert.equal(err, null, err);
+// 		   	 			ensRoot = value;
+// 							ens = new ENS(web3.currentProvider, ensRoot, Web3_0);
+// 							deployensAddress = deployens.address || deployens._address;
+// 		   	 			done();
+// 		   	 		});
+// 			   	 }
+// 		   });
+// 	});
+// }));

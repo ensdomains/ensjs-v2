@@ -18,7 +18,8 @@ var Promise = require('bluebird');
 var textEncoding = require('text-encoding');
 var TextDecoder = textEncoding.TextDecoder;
 var _ = require('underscore');
-var Web3 = require('web3');
+// var Web3 = require('web3');
+var Web3 = require('web337');
 var utils = require('./src/utils.js');
 var abi = require('./src/abi.js');
 
@@ -83,7 +84,13 @@ function Resolver_1(ens, node, contract) {
       });
     });
 
-
+    // var methods;
+    //   if(provider.version < 37){
+    //     methods = contract.methods
+    //   }else{
+    //     methods = contract.jsonInterface.getMethods()
+    //   }
+    
     _.each(contract.methods, function(method, signature) {
 
         this[signature] = function() {

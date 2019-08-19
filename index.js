@@ -15,8 +15,6 @@
 var namehash = require('eth-ens-namehash')
 var pako = require('pako');
 var Promise = require('bluebird');
-var textEncoding = require('text-encoding');
-var TextDecoder = textEncoding.TextDecoder;
 var _ = require('underscore');
 var Web3 = require('web3');
 var utils = require('./src/utils.js');
@@ -38,7 +36,7 @@ var registryAddresses = {
 
 var abiDecoders = {
   1: function(data) {
-    data  = new TextDecoder("utf-8").decode(data);
+    data  = utils.strFromUtf8Ab(data);
     return JSON.parse(data);
   },
   2: function(data) {

@@ -28,5 +28,9 @@ module.exports = {
     }
     F.prototype = constructor.prototype;
     return new F();
+  },
+  strFromUtf8Ab: function(ab) {
+    // from https://stackoverflow.com/a/18722848
+    return decodeURIComponent(escape(String.fromCharCode.apply(null, ab)));
   }
 }

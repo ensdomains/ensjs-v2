@@ -30,13 +30,13 @@
     "js-sha3": "^0.5.7",
     "pako": "^1.0.4",
     "underscore": "^1.8.3",
-    "web3": "^1.0.0-beta.34"
+    "web3": "^1.2.5"
   },
   "devDependencies": {
-    "ganache-cli": "^6.4.1",
+    "ganache-cli": "^6.8.2",
     "mocha": "^3.0.2",
     "npm-install-version": "^6.0.2",
     "solc": "0.4.9",
-    "web3-utils": "^1.0.0-beta.47"
+    "web3-utils": "^1.2.5"
   }
 }

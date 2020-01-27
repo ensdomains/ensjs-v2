@@ -6,11 +6,11 @@ var solc = require('solc');
 var TestRPC = require('ganache-cli');
 
 var niv = require('npm-install-version');
-niv.install('web3@1.0.0-beta.34');
+niv.install('web3@1.2.5');
 niv.install('web3@0.20.6');
 
 var Web3_0 = niv.require('web3@0.20.6');
-var Web3_1 = niv.require('web3@1.0.0-beta.34');
+var Web3_1 = niv.require('web3@1.2.5');
 
 var ens = null;
 var ensRoot = null;

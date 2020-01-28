@@ -32,6 +32,10 @@ var registryAddresses = {
   "4": "0xe7410170f87102DF0055eB195163A03B7F2Bff4A",
   // Goerli
   "5": "0x112234455c3a32fd11230c42e7bccd4a84e02010",
+  // Volta
+  "73799": "0xD7C2c85E48C27eCD43807656551e3DC416298d9e",
+  // Goerli
+  "246": "0xD7C2c85E48C27eCD43807656551e3DC416298d9e",
 };
 
 var abiDecoders = {

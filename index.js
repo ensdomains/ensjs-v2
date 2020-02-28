@@ -67,17 +67,28 @@ ENS.NameNotFound = Error("ENS name not found");
 /**
  * @class
  */
-function Resolver_1(ens, node, contract) {
+function Resolver_1(ens, node, parentNode, contract) {
     this.ens = ens;
     this.node = node;
     this.instancePromise = ens.registryPromise.then(function(registry) {
       return registry.methods.resolver(node).call().then(function(address) {
         if(address == "0x0000000000000000000000000000000000000000") {
-          return Promise.reject(ENS.NameNotFound);
-        }
+          if (parentNode === null) {
+            return Promise.reject(ENS.NameNotFound);
+          }
 
-        contract.options.address = address;
-        return contract;
+          return registry.methods.resolver(parentNode).call().then(function(addressTwo) {
+            if(addressTwo == "0x0000000000000000000000000000000000000000") {
+              return Promise.reject(ENS.NameNotFound);
+            }
+
+            contract.options.address = addressTwo;
+            return contract;
+          });
+        } else {
+          contract.options.address = address;
+          return contract;
+        }
       });
     });
 
@@ -241,7 +252,14 @@ ENS_1.NameNotFound = Error("ENS name not found");
 ENS_1.prototype.resolver = function(name, abi) {
     abi = abi || resolverInterface;
     var node = namehash.hash(name);
-    return new Resolver_1(this, node, new this.web3.eth.Contract(abi));
+    var nodeLabels = name.split(".");
+    var parentNode;
+    if (nodeLabels.length >= 3) {
+      parentNode = namehash.hash(nodeLabels.slice(1).join("."));
+    } else {
+      parentNode = null;
+    }
+    return new Resolver_1(this, node, parentNode, new this.web3.eth.Contract(abi));
 };
 
 /**
@@ -341,15 +359,26 @@ ENS_1.prototype.setSubnodeOwner = function(name, addr, params) {
 /**
  * @class
  */
-function Resolver_0(ens, node, contract) {
+function Resolver_0(ens, node, parentNode, contract) {
     this.ens = ens;
     this.node = node;
     this.instancePromise = ens.registryPromise.then(function(registry) {
       return registry.resolverAsync(node).then(function(address) {
         if(address == "0x0000000000000000000000000000000000000000") {
-          return Promise.reject(ENS.NameNotFound);
+          if (parentNode === null) {
+            return Promise.reject(ENS.NameNotFound);
+          }
+
+          return registry.resolverAsync(parentNode).then(function(addressTwo) {
+            if(addressTwo == "0x0000000000000000000000000000000000000000") {
+              return Promise.reject(ENS.NameNotFound);
+            }
+
+            return Promise.promisifyAll(contract.at(addressTwo));
+          });
+        } else {
+          return Promise.promisifyAll(contract.at(address));
         }
-        return Promise.promisifyAll(contract.at(address));
       });
     });
 
@@ -487,7 +516,14 @@ ENS_0.NameNotFound = Error("ENS name not found");
 ENS_0.prototype.resolver = function(name, abi) {
     abi = abi || resolverInterface;
     var node = namehash.hash(name);
-    return new Resolver_0(this, node, this.web3.eth.contract(abi));
+    var nodeLabels = name.split(".");
+    var parentNode;
+    if (nodeLabels.length >= 3) {
+      parentNode = namehash.hash(nodeLabels.slice(1).join("."));
+    } else {
+      parentNode = null;
+    }
+    return new Resolver_0(this, node, parentNode, this.web3.eth.contract(abi));
 };
 
 /**

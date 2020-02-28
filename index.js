@@ -73,6 +73,10 @@ function Resolver_1(ens, node, parentNode, contract) {
     this.instancePromise = ens.registryPromise.then(function(registry) {
       return registry.methods.resolver(node).call().then(function(address) {
         if(address == "0x0000000000000000000000000000000000000000") {
+          if (parentNode === null) {
+            return Promise.reject(ENS.NameNotFound);
+          }
+
           return registry.methods.resolver(parentNode).call().then(function(addressTwo) {
             if(addressTwo == "0x0000000000000000000000000000000000000000") {
               return Promise.reject(ENS.NameNotFound);
@@ -248,7 +252,13 @@ ENS_1.NameNotFound = Error("ENS name not found");
 ENS_1.prototype.resolver = function(name, abi) {
     abi = abi || resolverInterface;
     var node = namehash.hash(name);
-    var parentNode = namehash.hash(name.split(".").slice(1).join("."));
+    var nodeLabels = name.split(".");
+    var parentNode;
+    if (nodeLabels.length >= 3) {
+      parentNode = namehash.hash(nodeLabels.slice(1).join("."));
+    } else {
+      parentNode = null;
+    }
     return new Resolver_1(this, node, parentNode, new this.web3.eth.Contract(abi));
 };
 
@@ -355,6 +365,10 @@ function Resolver_0(ens, node, parentNode, contract) {
     this.instancePromise = ens.registryPromise.then(function(registry) {
       return registry.resolverAsync(node).then(function(address) {
         if(address == "0x0000000000000000000000000000000000000000") {
+          if (parentNode === null) {
+            return Promise.reject(ENS.NameNotFound);
+          }
+
           return registry.resolverAsync(parentNode).then(function(addressTwo) {
             if(addressTwo == "0x0000000000000000000000000000000000000000") {
               return Promise.reject(ENS.NameNotFound);
@@ -502,7 +516,13 @@ ENS_0.NameNotFound = Error("ENS name not found");
 ENS_0.prototype.resolver = function(name, abi) {
     abi = abi || resolverInterface;
     var node = namehash.hash(name);
-    var parentNode = namehash.hash(name.split(".").slice(1).join("."));
+    var nodeLabels = name.split(".");
+    var parentNode;
+    if (nodeLabels.length >= 3) {
+      parentNode = namehash.hash(nodeLabels.slice(1).join("."));
+    } else {
+      parentNode = null;
+    }
     return new Resolver_0(this, node, parentNode, this.web3.eth.contract(abi));
 };
 

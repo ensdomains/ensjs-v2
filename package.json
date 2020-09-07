@@ -1,7 +1,7 @@
 {
-  "name": "@ensdomains/ens-lite",
+  "name": "@ensdomains/ensjs",
   "version": "0.0.1",
-  "description": "Minimum Viable ENS",
+  "description": "ens.js v2",
   "main": "src/index.js",
   "files": [
     "src",

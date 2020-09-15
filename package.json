@@ -41,6 +41,7 @@
     "eslint-plugin-standard": "^3.0.1",
     "esm": "^3.2.22",
     "ganache-cli": "^6.4.3",
+    "ganache-core": "^2.11.3",
     "jest": "^24.8.0"
   },
   "dependencies": {

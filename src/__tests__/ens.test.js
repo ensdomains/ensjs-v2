@@ -180,16 +180,16 @@ describe('Blockchain tests', () => {
     })
     test('deleteSubdomain deletes a subdomain', async () => {
       const accounts = await getAccounts()
-      const hash = namehash('b.subdomain.eth')
+      const hash = namehash('b.subdomaindummy.eth')
       const oldOwner = await ensContract.owner(hash)
       // expect the initial owner to be no one
       expect(oldOwner).toBe('0x0000000000000000000000000000000000000000')
-      const tx = await ens.name('subdomain.eth').createSubdomain('b')
+      const tx = await ens.name('subdomaindummy.eth').createSubdomain('b')
       await tx.wait()
       const newOwner = await ensContract.owner(hash)
       // Verify owner is the user and therefore the subdomain exists
       expect(newOwner).toBe(accounts[0])
-      const tx2 = await ens.name('subdomain.eth').deleteSubdomain('b')
+      const tx2 = await ens.name('subdomaindummy.eth').deleteSubdomain('b')
       await tx2.wait()
       const deletedOwner = await ensContract.owner(hash)
       // Verify owner has been set to 0x00... to ensure deletion

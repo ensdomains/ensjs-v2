@@ -1,4 +1,5 @@
 import { ethers } from 'ethers'
+import { formatsByName } from '@ensdomains/address-encoder'
 import { abi as ensContract } from '@ensdomains/ens/build/contracts/ENS.json'
 import { abi as resolverContract } from '@ensdomains/resolver/build/contracts/Resolver.json'
 
@@ -9,12 +10,6 @@ let registries = {
   3: '0x112234455c3a32fd11230c42e7bccd4a84e02010',
   4: '0xe7410170f87102df0055eb195163a03b7f2bff4a',
   5: '0x112234455c3a32fd11230c42e7bccd4a84e02010',
-}
-
-let web3
-
-async function getNetworkId() {
-  return web3.eth.net.getId()
 }
 
 function getResolverContract({ address, provider }) {
@@ -44,11 +39,70 @@ class Name {
     this.ensWithSigner = this.ens.connect(signer)
     this.name = name
     this.namehash = namehash(name)
+    this.provider = provider
     this.signer = signer
   }
 
-  async getAddr() {
-    return
+  async getAddrWithResolver(key, resolverAddr) {
+    try {
+      const Resolver = getResolverContract({
+        address: resolverAddr,
+        provider: this.provider,
+      })
+      const { coinType, encoder } = formatsByName[key]
+      const addr = await Resolver['addr(bytes32,uint256)'](
+        this.namehash,
+        coinType
+      )
+      if (addr === '0x') return emptyAddress
+
+      return encoder(Buffer.from(addr.slice(2), 'hex'))
+    } catch (e) {
+      console.log(e)
+      console.warn(
+        'Error getting addr on the resolver contract, are you sure the resolver address is a resolver contract?'
+      )
+      return emptyAddress
+    }
+  }
+
+  async getAddress(coinId) {
+    const resolverAddr = await this.getResolver()
+    if (parseInt(resolverAddr, 16) === 0) return emptyAddress
+    const Resolver = getResolverContract({
+      address: resolverAddr,
+      provider: this.provider,
+    })
+    if (!coinId) {
+      return Resolver['addr(bytes32)'](this.namehash)
+    }
+    //TODO add coinID
+
+    return this.getAddrWithResolver(coinId, resolverAddr)
+  }
+
+  async setAddress(key, address) {
+    const resolverAddr = await this.getResolver()
+    return this.setAddrWithResolver(key, address, resolverAddr)
+  }
+
+  async setAddrWithResolver(key, address, resolverAddr) {
+    const Resolver = getResolverContract({
+      address: resolverAddr,
+      provider: this.signer,
+    })
+    const { decoder, coinType } = formatsByName[key]
+    let addressAsBytes
+    if (!address || address === '') {
+      addressAsBytes = Buffer.from('')
+    } else {
+      addressAsBytes = decoder(address)
+    }
+    return Resolver['setAddr(bytes32,uint256,bytes)'](
+      this.namehash,
+      coinType,
+      addressAsBytes
+    )
   }
 
   async getOwner() {
@@ -121,6 +175,7 @@ export default class ENS {
       signer: this.signer,
     })
   }
+
   resolver(address) {
     return new Resolver({ ens: this.ens, provider: this.provider })
   }

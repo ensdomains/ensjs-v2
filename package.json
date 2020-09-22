@@ -42,13 +42,14 @@
     "esm": "^3.2.22",
     "ganache-cli": "^6.4.3",
     "ganache-core": "^2.11.3",
-    "jest": "^24.8.0",
+    "jest": "^26.4.2",
     "web3": "^1.2.11"
   },
   "dependencies": {
     "@babel/runtime": "^7.4.4",
+    "@ensdomains/address-encoder": "^0.1.7",
     "@ensdomains/ens": "0.4.3",
-    "@ensdomains/resolver": "^0.1.6",
+    "@ensdomains/resolver": "0.2.4",
     "eth-ens-namehash": "^2.0.8",
     "ethers": "^5.0.13",
     "js-sha3": "^0.8.0"

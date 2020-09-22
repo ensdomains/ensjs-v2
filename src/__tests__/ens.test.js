@@ -196,106 +196,112 @@ describe('Blockchain tests', () => {
     })
   })
 
-  //   describe('Resolver', () => {
-  //     test('getAddress returns an address', async () => {
-  //       const addr = await ens.getAddress('resolver.eth')
-  //       expect(addr).toBeHex()
-  //       expect(addr).toBeEthAddress()
-  //       expect(addr).not.toBe('0x0000000000000000000000000000000000000000')
-  //     })
+  describe('Resolver', () => {
+    test('getAddress returns an address', async () => {
+      const addr = await ens.name('resolver.eth').getAddress()
+      expect(addr).toBeHex()
+      expect(addr).toBeEthAddress()
+      expect(addr).not.toBe('0x0000000000000000000000000000000000000000')
+    })
 
-  //     test('getAddress returns 0x000', async () => {
-  //       const tx = await ens.createSubdomain('addr.testing.eth')
-  //       await tx.wait()
-  //       const resolverAddr = await ens.getAddress('resolver.eth')
-  //       const tx2 = await ens.setResolver('addr.testing.eth', resolverAddr)
-  //       await tx2.wait()
-  //       const addr = await ens.getAddress('addr.testing.eth')
-  //       expect(addr).toBe('0x0000000000000000000000000000000000000000')
-  //     })
+    test('getAddress returns 0x000', async () => {
+      const accounts = await getAccounts()
+      const tx = await ensContract.setSubnodeRecord(
+        namehash('testing.eth'),
+        labelhash('addr'),
+        accounts[0],
+        publicResolver,
+        0
+      )
+      await tx.wait()
+      const addr = await ens.name('addr.testing.eth').getAddress()
+      expect(addr).toBe('0x0000000000000000000000000000000000000000')
+    })
 
-  //     test('getAddr returns an eth address', async () => {
-  //       const addr = await ens.getAddress('resolver.eth', 'ETH')
-  //       expect(addr).toBeHex()
-  //       expect(addr).toBeEthAddress()
-  //       expect(addr).not.toBe('0x0000000000000000000000000000000000000000')
-  //     })
+    test('getAddr returns an eth address', async () => {
+      const addr = await ens.name('resolver.eth').getAddress('ETH')
+      expect(addr).toBeHex()
+      expect(addr).toBeEthAddress()
+      expect(addr).not.toBe('0x0000000000000000000000000000000000000000')
+    })
 
-  //     test('setAddress sets an address', async () => {
-  //       //reverts if no addr is present
-  //       const resolverAddr = await ens.getAddress('resolver.eth')
-  //       const tx = await ens.setResolver('superawesome.eth', resolverAddr)
-  //       await tx.wait()
-  //       const tx2 = await ens.setAddress(
-  //         'superawesome.eth',
-  //         '0x0000000000000000000000000000000000012345'
-  //       )
-  //       await tx2.wait()
-  //       const addr = await ens.getAddress('superawesome.eth')
-  //       expect(addr).toBe('0x0000000000000000000000000000000000012345')
-  //     })
+    test('setAddress sets an address', async () => {
+      //reverts if no addr is present
+      const resolverAddr = await ens.name('resolver.eth').getAddress()
+      const tx = await ensContract.setResolver(
+        namehash('superawesome.eth'),
+        resolverAddr
+      )
+      await tx.wait()
+      const tx2 = await ens
+        .name('superawesome.eth')
+        .setAddress('ETH', '0x0000000000000000000000000000000000012345')
+      await tx2.wait()
+      const addr = await ens.name('superawesome.eth').getAddress()
+      expect(addr).toBe('0x0000000000000000000000000000000000012345')
+    })
 
-  //     test('setAddr sets an eth address', async () => {
-  //       //reverts if no addr is present
-  //       const resolverAddr = await ens.getAddress('resolver.eth')
-  //       const tx = await ens.setResolver('superawesome.eth', resolverAddr)
-  //       await tx.wait()
-  //       const tx2 = await ens.setAddr(
-  //         'superawesome.eth',
-  //         'ETH',
-  //         '0x0000000000000000000000000000000000012345'
-  //       )
-  //       await tx2.wait()
-  //       const addr = await ens.getAddr('superawesome.eth', 'ETH')
-  //       expect(addr).toBe('0x0000000000000000000000000000000000012345')
-  //     })
+    //     test('setAddr sets an eth address', async () => {
+    //       //reverts if no addr is present
+    //       const resolverAddr = await ens.getAddress('resolver.eth')
+    //       const tx = await ens.setResolver('superawesome.eth', resolverAddr)
+    //       await tx.wait()
+    //       const tx2 = await ens.setAddr(
+    //         'superawesome.eth',
+    //         'ETH',
+    //         '0x0000000000000000000000000000000000012345'
+    //       )
+    //       await tx2.wait()
+    //       const addr = await ens.getAddr('superawesome.eth', 'ETH')
+    //       expect(addr).toBe('0x0000000000000000000000000000000000012345')
+    //     })
 
-  //     test('getContent returns a 32 byte hash', async () => {
-  //       const content = await ens.getContent('oldresolver.eth')
-  //       expect(content.contentType).toBe('oldcontent')
-  //       expect(content.value).toBeHex()
-  //       expect(content.value).toMatchSnapshot()
-  //     })
+    test('getContent returns a 32 byte hash', async () => {
+      const content = await ens.getContent('oldresolver.eth')
+      expect(content.contentType).toBe('oldcontent')
+      expect(content.value).toBeHex()
+      expect(content.value).toMatchSnapshot()
+    })
 
-  //     // old content resolver isn't on new registrar
+    //     // old content resolver isn't on new registrar
 
-  //     // test('setContent sets 32 byte hash', async () => {
-  //     //   await ens.setContent(
-  //     //     'oldresolver.eth',
-  //     //     '0xd1de9994b4d039f6548d191eb26786769f580809256b4685ef316805265ea162'
-  //     //   )
+    //     // test('setContent sets 32 byte hash', async () => {
+    //     //   await ens.setContent(
+    //     //     'oldresolver.eth',
+    //     //     '0xd1de9994b4d039f6548d191eb26786769f580809256b4685ef316805265ea162'
+    //     //   )
 
-  //     //   const content = await ens.getContent('oldresolver.eth')
-  //     //   expect(content.contentType).toBe('oldcontent')
-  //     //   expect(content.value).toBeHex()
-  //     //   expect(content.value).toMatchSnapshot()
-  //     // })
+    //     //   const content = await ens.getContent('oldresolver.eth')
+    //     //   expect(content.contentType).toBe('oldcontent')
+    //     //   expect(content.value).toBeHex()
+    //     //   expect(content.value).toMatchSnapshot()
+    //     // })
 
-  //     //ipfs://QmTeW79w7QQ6Npa3b1d5tANreCDxF2iDaAPsDvW6KtLmfB
-  //     test('setContentHash sets up ipfs has', async () => {
-  //       const contentHash =
-  //         'ipfs://QmTeW79w7QQ6Npa3b1d5tANreCDxF2iDaAPsDvW6KtLmfB'
-  //       await ens.setContenthash('abittooawesome.eth', contentHash)
+    //     //ipfs://QmTeW79w7QQ6Npa3b1d5tANreCDxF2iDaAPsDvW6KtLmfB
+    // test('setContentHash sets up ipfs has', async () => {
+    //   const contentHash =
+    //     'ipfs://QmTeW79w7QQ6Npa3b1d5tANreCDxF2iDaAPsDvW6KtLmfB'
+    //   await ens.setContenthash('abittooawesome.eth', contentHash)
 
-  //       const content = await ens.getContent('abittooawesome.eth')
-  //       expect(content.contentType).toBe('contenthash')
-  //       expect(content.value).toBe(
-  //         'ipfs://QmTeW79w7QQ6Npa3b1d5tANreCDxF2iDaAPsDvW6KtLmfB'
-  //       )
-  //     })
+    //   const content = await ens.getContent('abittooawesome.eth')
+    //   expect(content.contentType).toBe('contenthash')
+    //   expect(content.value).toBe(
+    //     'ipfs://QmTeW79w7QQ6Npa3b1d5tANreCDxF2iDaAPsDvW6KtLmfB'
+    //   )
+    // })
 
-  //     test('setContentHash sets 32 byte hash', async () => {
-  //       const contentHash =
-  //         'bzz://d1de9994b4d039f6548d191eb26786769f580809256b4685ef316805265ea162'
-  //       await ens.setContenthash('abittooawesome.eth', contentHash)
+    // test('setContentHash sets 32 byte hash', async () => {
+    //   const contentHash =
+    //     'bzz://d1de9994b4d039f6548d191eb26786769f580809256b4685ef316805265ea162'
+    //   await ens.setContenthash('abittooawesome.eth', contentHash)
 
-  //       const content = await ens.getContent('abittooawesome.eth')
-  //       expect(content.contentType).toBe('contenthash')
-  //       expect(content.value).toBe(
-  //         'bzz://d1de9994b4d039f6548d191eb26786769f580809256b4685ef316805265ea162'
-  //       )
-  //     })
-  //   })
+    //   const content = await ens.getContent('abittooawesome.eth')
+    //   expect(content.contentType).toBe('contenthash')
+    //   expect(content.value).toBe(
+    //     'bzz://d1de9994b4d039f6548d191eb26786769f580809256b4685ef316805265ea162'
+    //   )
+    // })
+  })
 
   //   describe('Reverse Registrar', () => {
   //     test('reverseNode is owned by reverseRegistrar', async () => {

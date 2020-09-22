@@ -256,12 +256,12 @@ describe('Blockchain tests', () => {
     //       expect(addr).toBe('0x0000000000000000000000000000000000012345')
     //     })
 
-    test('getContent returns a 32 byte hash', async () => {
-      const content = await ens.getContent('oldresolver.eth')
-      expect(content.contentType).toBe('oldcontent')
-      expect(content.value).toBeHex()
-      expect(content.value).toMatchSnapshot()
-    })
+    // test('getContent returns a 32 byte hash', async () => {
+    //   const content = await ens.name('oldresolver.eth').getContent()
+    //   expect(content.contentType).toBe('oldcontent')
+    //   expect(content.value).toBeHex()
+    //   expect(content.value).toMatchSnapshot()
+    // })
 
     //     // old content resolver isn't on new registrar
 
@@ -303,28 +303,28 @@ describe('Blockchain tests', () => {
     // })
   })
 
-  //   describe('Reverse Registrar', () => {
-  //     test('reverseNode is owned by reverseRegistrar', async () => {
-  //       const owner = await ens.getOwner('addr.reverse')
-  //       expect(reverseRegistrar).toBe(owner)
-  //     })
+  describe('Reverse Registrar', () => {
+    test('reverseNode is owned by reverseRegistrar', async () => {
+      const owner = await ens.name('addr.reverse').getOwner()
+      expect(reverseRegistrar).toBe(owner)
+    })
 
-  //     test('getName gets a name for an address', async () => {
-  //       const accounts = await getAccounts()
-  //       const { name } = await ens.getName(accounts[2])
-  //       expect(name).toBe('eth')
-  //     })
+    test('getName gets a name for an address', async () => {
+      const accounts = await getAccounts()
+      const { name } = await ens.getName(accounts[2])
+      expect(name).toBe('eth')
+    })
 
-  //     test('claimAndSetReverseRecordName claims and sets a name', async () => {
-  //       const accounts = await getAccounts()
-  //       const { name } = await ens.getName(accounts[0])
-  //       expect(name).toBe('abittooawesome.eth')
-  //       const tx = await ens.claimAndSetReverseRecordName('resolver.eth', 2000000)
-  //       await tx.wait()
-  //       const { name: nameAfter } = await ens.getName(accounts[0])
-  //       expect(nameAfter).toBe('resolver.eth')
-  //     })
-  //   })
+    // test('claimAndSetReverseRecordName claims and sets a name', async () => {
+    //   const accounts = await getAccounts()
+    //   const { name } = await ens.getName(accounts[0])
+    //   expect(name).toBe('abittooawesome.eth')
+    //   const tx = await ens.claimAndSetReverseRecordName('resolver.eth', 2000000)
+    //   await tx.wait()
+    //   const { name: nameAfter } = await ens.getName(accounts[0])
+    //   expect(nameAfter).toBe('resolver.eth')
+    // })
+  })
 
   //   describe('Helper functions', () => {
   //     test('getDomainDetails gets rootdomain and resolver details', async () => {

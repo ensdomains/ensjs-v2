@@ -81,6 +81,58 @@ class Name {
     return this.getAddrWithResolver(coinId, resolverAddr)
   }
 
+  async getContent() {
+    const resolver = await this.getResolver()
+    return this.getContentWithResolver(resolver)
+  }
+
+  async getContentWithResolver(resolverAddr) {
+    if (parseInt(resolverAddr, 16) === 0) {
+      return emptyAddress
+    }
+    try {
+      const provider = await getProvider()
+      const Resolver = getResolverContract({
+        address: resolverAddr,
+        provider,
+      })
+      const contentHashSignature = utils
+        .solidityKeccak256(['string'], ['contenthash(bytes32)'])
+        .slice(0, 10)
+
+      const isContentHashSupported = await Resolver.supportsInterface(
+        contentHashSignature
+      )
+
+      if (isContentHashSupported) {
+        const { protocolType, decoded, error } = decodeContenthash(
+          await Resolver.contenthash(this.namehash)
+        )
+        if (error) {
+          return {
+            value: emptyAddress,
+            contentType: 'contenthash',
+          }
+        }
+        return {
+          value: `${protocolType}://${decoded}`,
+          contentType: 'contenthash',
+        }
+      } else {
+        const value = await Resolver.content(this.namehash)
+        return {
+          value,
+          contentType: 'oldcontent',
+        }
+      }
+    } catch (e) {
+      const message =
+        'Error getting content on the resolver contract, are you sure the resolver address is a resolver contract?'
+      console.warn(message, e)
+      return { value: message, contentType: 'error' }
+    }
+  }
+
   async setAddress(key, address) {
     const resolverAddr = await this.getResolver()
     return this.setAddrWithResolver(key, address, resolverAddr)
@@ -113,7 +165,7 @@ class Name {
     return this.ens.resolver(this.namehash)
   }
 
-  async getTTL(name) {
+  async getTTL() {
     return this.ens.ttl(this.namehash)
   }
 
@@ -180,8 +232,33 @@ export default class ENS {
     return new Resolver({ ens: this.ens, provider: this.provider })
   }
 
-  getReverseRecord() {
-    //TODO
+  async getName(address) {
+    const reverseNode = `${address.slice(2)}.addr.reverse`
+    const resolverAddr = await this.ens.resolver(namehash(reverseNode))
+    return this.getNameWithResolver(address, resolverAddr)
+  }
+
+  async getNameWithResolver(address, resolverAddr) {
+    const reverseNode = `${address.slice(2)}.addr.reverse`
+    const reverseNamehash = namehash(reverseNode)
+    if (parseInt(resolverAddr, 16) === 0) {
+      return {
+        name: null,
+      }
+    }
+
+    try {
+      const Resolver = getResolverContract({
+        address: resolverAddr,
+        provider: this.provider,
+      })
+      const name = await Resolver.name(reverseNamehash)
+      return {
+        name,
+      }
+    } catch (e) {
+      console.log(`Error getting name for reverse record of ${address}`, e)
+    }
   }
   setReverseRecord() {
     //TODO

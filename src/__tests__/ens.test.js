@@ -241,27 +241,11 @@ describe('Blockchain tests', () => {
       expect(addr).toBe('0x0000000000000000000000000000000000012345')
     })
 
-    //     test('setAddr sets an eth address', async () => {
-    //       //reverts if no addr is present
-    //       const resolverAddr = await ens.getAddress('resolver.eth')
-    //       const tx = await ens.setResolver('superawesome.eth', resolverAddr)
-    //       await tx.wait()
-    //       const tx2 = await ens.setAddr(
-    //         'superawesome.eth',
-    //         'ETH',
-    //         '0x0000000000000000000000000000000000012345'
-    //       )
-    //       await tx2.wait()
-    //       const addr = await ens.getAddr('superawesome.eth', 'ETH')
-    //       expect(addr).toBe('0x0000000000000000000000000000000000012345')
-    //     })
-
-    // test('getContent returns a 32 byte hash', async () => {
-    //   const content = await ens.name('oldresolver.eth').getContent()
-    //   expect(content.contentType).toBe('oldcontent')
-    //   expect(content.value).toBeHex()
-    //   expect(content.value).toMatchSnapshot()
-    // })
+    test('getContent returns a 32 byte hash', async () => {
+      const content = await ens.name('oldresolver.eth').getContent()
+      expect(content.value).toBeHex()
+      expect(content.value).toMatchSnapshot()
+    })
 
     //     // old content resolver isn't on new registrar
 

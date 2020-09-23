@@ -4,6 +4,12 @@ import { abi as ensContract } from '@ensdomains/ens/build/contracts/ENS.json'
 import { abi as resolverContract } from '@ensdomains/resolver/build/contracts/Resolver.json'
 
 import { emptyAddress, namehash, labelhash } from './utils'
+import {
+  isValidContenthash,
+  encodeContenthash,
+  decodeContenthash,
+} from './utils/contents'
+const utils = ethers.utils
 
 let registries = {
   1: '0x314159265dd8dbb310642f98f50c066173c1259b',
@@ -91,10 +97,9 @@ class Name {
       return emptyAddress
     }
     try {
-      const provider = await getProvider()
       const Resolver = getResolverContract({
         address: resolverAddr,
-        provider,
+        provider: this.provider,
       })
       const contentHashSignature = utils
         .solidityKeccak256(['string'], ['contenthash(bytes32)'])
@@ -109,6 +114,7 @@ class Name {
           await Resolver.contenthash(this.namehash)
         )
         if (error) {
+          console.log('error decoding', error)
           return {
             value: emptyAddress,
             contentType: 'contenthash',

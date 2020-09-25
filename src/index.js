@@ -23,7 +23,6 @@ function getResolverContract({ address, provider }) {
 }
 
 function getENSContract({ address, provider }) {
-  console.log(address, provider, ensContract)
   return new ethers.Contract(address, ensContract, provider)
 }
 
@@ -49,6 +48,43 @@ class Name {
     this.signer = signer
   }
 
+  async getOwner() {
+    return this.ens.owner(this.namehash)
+  }
+
+  async setOwner(address) {
+    if (!address) throw new Error('No newOwner address provided!')
+    return this.ensWithSigner.setOwner(this.namehash, address)
+  }
+
+  async getResolver() {
+    return this.ens.resolver(this.namehash)
+  }
+
+  async setResolver(address) {
+    if (!address) throw new Error('No resolver address provided!')
+    return this.ensWithSigner.setResolver(this.namehash, address)
+  }
+
+  async getTTL() {
+    return this.ens.ttl(this.namehash)
+  }
+
+  async getAddress(coinId) {
+    const resolverAddr = await this.getResolver()
+    if (parseInt(resolverAddr, 16) === 0) return emptyAddress
+    const Resolver = getResolverContract({
+      address: resolverAddr,
+      provider: this.provider,
+    })
+    if (!coinId) {
+      return Resolver['addr(bytes32)'](this.namehash)
+    }
+    //TODO add coinID
+
+    return this.getAddrWithResolver(coinId, resolverAddr)
+  }
+
   async getAddrWithResolver(key, resolverAddr) {
     try {
       const Resolver = getResolverContract({
@@ -72,19 +108,28 @@ class Name {
     }
   }
 
-  async getAddress(coinId) {
+  async setAddress(key, address) {
     const resolverAddr = await this.getResolver()
-    if (parseInt(resolverAddr, 16) === 0) return emptyAddress
+    return this.setAddrWithResolver(key, address, resolverAddr)
+  }
+
+  async setAddrWithResolver(key, address, resolverAddr) {
     const Resolver = getResolverContract({
       address: resolverAddr,
-      provider: this.provider,
+      provider: this.signer,
     })
-    if (!coinId) {
-      return Resolver['addr(bytes32)'](this.namehash)
+    const { decoder, coinType } = formatsByName[key]
+    let addressAsBytes
+    if (!address || address === '') {
+      addressAsBytes = Buffer.from('')
+    } else {
+      addressAsBytes = decoder(address)
     }
-    //TODO add coinID
-
-    return this.getAddrWithResolver(coinId, resolverAddr)
+    return Resolver['setAddr(bytes32,uint256,bytes)'](
+      this.namehash,
+      coinType,
+      addressAsBytes
+    )
   }
 
   async getContent() {
@@ -139,50 +184,57 @@ class Name {
     }
   }
 
-  async setAddress(key, address) {
-    const resolverAddr = await this.getResolver()
-    return this.setAddrWithResolver(key, address, resolverAddr)
+  async setContenthash(content) {
+    const resolverAddr = await this.getResolver(this.name)
+    return this.setContenthashWithResolver(content, resolverAddr)
   }
 
-  async setAddrWithResolver(key, address, resolverAddr) {
+  async setContenthashWithResolver(content, resolverAddr) {
+    let encodedContenthash = content
+    if (parseInt(content, 16) !== 0) {
+      encodedContenthash = encodeContenthash(content)
+    }
     const Resolver = getResolverContract({
       address: resolverAddr,
       provider: this.signer,
     })
-    const { decoder, coinType } = formatsByName[key]
-    let addressAsBytes
-    if (!address || address === '') {
-      addressAsBytes = Buffer.from('')
-    } else {
-      addressAsBytes = decoder(address)
+    return Resolver.setContenthash(this.namehash, encodedContenthash)
+  }
+
+  async getText(key) {
+    const resolverAddr = await this.getResolver(this.name)
+    return this.getTextWithResolver(key, resolverAddr)
+  }
+
+  async getTextWithResolver(key, resolverAddr) {
+    if (parseInt(resolverAddr, 16) === 0) {
+      return ''
     }
-    return Resolver['setAddr(bytes32,uint256,bytes)'](
-      this.namehash,
-      coinType,
-      addressAsBytes
-    )
+    try {
+      const Resolver = getResolverContract({
+        address: resolverAddr,
+        provider: this.provider,
+      })
+      const addr = await Resolver.text(this.namehash, key)
+      return addr
+    } catch (e) {
+      console.warn(
+        'Error getting text record on the resolver contract, are you sure the resolver address is a resolver contract?'
+      )
+      return ''
+    }
   }
 
-  async getOwner() {
-    return this.ens.owner(this.namehash)
+  async setText(key, recordValue) {
+    const resolverAddr = await this.getResolver(this.name)
+    return this.setTextWithResolver(key, recordValue, resolverAddr)
   }
 
-  async getResolver() {
-    return this.ens.resolver(this.namehash)
-  }
-
-  async getTTL() {
-    return this.ens.ttl(this.namehash)
-  }
-
-  async setResolver(address) {
-    if (!address) throw new Error('No resolver address provided!')
-    return this.ensWithSigner.setResolver(this.namehash, address)
-  }
-
-  async setOwner(address) {
-    if (!address) throw new Error('No newOwner address provided!')
-    return this.ensWithSigner.setOwner(this.namehash, address)
+  async setTextWithResolver(key, recordValue, resolverAddr) {
+    return getResolverContract({
+      address: resolverAddr,
+      provider: this.signer,
+    }).setText(this.namehash, key, recordValue)
   }
 
   async setSubnodeOwner(label, newOwner) {
@@ -271,4 +323,4 @@ export default class ENS {
   }
 }
 
-export { namehash, labelhash, getENSContract }
+export { namehash, labelhash, getENSContract, getResolverContract }

@@ -8,7 +8,12 @@ import {
 } from '../testing-utils/web3Util'
 import { deployENS } from '@ensdomains/mock'
 //import { getENS, getNamehash } from '../ens'
-import ENS, { namehash, labelhash, getENSContract } from '../index.js'
+import ENS, {
+  namehash,
+  labelhash,
+  getENSContract,
+  getResolverContract,
+} from '../index.js'
 import '../testing-utils/extendExpect'
 import Web3 from 'web3'
 import { ethers } from 'ethers'
@@ -22,6 +27,7 @@ let provider
 let ens
 let ensContract
 let publicResolver
+let signer
 
 describe('Blockchain tests', () => {
   beforeAll(async () => {
@@ -62,7 +68,8 @@ describe('Blockchain tests', () => {
 
     ens = new ENS({ provider, ensAddress })
     const ethersProvider = new ethers.providers.Web3Provider(provider)
-    const signer = ethersProvider.getSigner()
+    const ethersSigner = ethersProvider.getSigner()
+    signer = ethersSigner
     ensContract = getENSContract({
       provider: signer,
       address: ensAddress,
@@ -249,42 +256,82 @@ describe('Blockchain tests', () => {
 
     //     // old content resolver isn't on new registrar
 
-    //     // test('setContent sets 32 byte hash', async () => {
-    //     //   await ens.setContent(
-    //     //     'oldresolver.eth',
-    //     //     '0xd1de9994b4d039f6548d191eb26786769f580809256b4685ef316805265ea162'
-    //     //   )
+    // test('setContent sets 32 byte hash', async () => {
+    //   await ens.setContent(
+    //     'oldresolver.eth',
+    //     '0xd1de9994b4d039f6548d191eb26786769f580809256b4685ef316805265ea162'
+    //   )
 
-    //     //   const content = await ens.getContent('oldresolver.eth')
-    //     //   expect(content.contentType).toBe('oldcontent')
-    //     //   expect(content.value).toBeHex()
-    //     //   expect(content.value).toMatchSnapshot()
-    //     // })
+    //   const content = await ens.getContent('oldresolver.eth')
+    //   expect(content.contentType).toBe('oldcontent')
+    //   expect(content.value).toBeHex()
+    //   expect(content.value).toMatchSnapshot()
+    // })
 
     //     //ipfs://QmTeW79w7QQ6Npa3b1d5tANreCDxF2iDaAPsDvW6KtLmfB
-    // test('setContentHash sets up ipfs has', async () => {
-    //   const contentHash =
-    //     'ipfs://QmTeW79w7QQ6Npa3b1d5tANreCDxF2iDaAPsDvW6KtLmfB'
-    //   await ens.setContenthash('abittooawesome.eth', contentHash)
+    test('setContentHash sets up ipfs has', async () => {
+      const contentHash =
+        'ipfs://QmTeW79w7QQ6Npa3b1d5tANreCDxF2iDaAPsDvW6KtLmfB'
+      await ens.name('abittooawesome.eth').setContenthash(contentHash)
 
-    //   const content = await ens.getContent('abittooawesome.eth')
-    //   expect(content.contentType).toBe('contenthash')
-    //   expect(content.value).toBe(
-    //     'ipfs://QmTeW79w7QQ6Npa3b1d5tANreCDxF2iDaAPsDvW6KtLmfB'
-    //   )
-    // })
+      const content = await ens.name('abittooawesome.eth').getContent()
+      expect(content.contentType).toBe('contenthash')
+      expect(content.value).toBe(
+        'ipfs://QmTeW79w7QQ6Npa3b1d5tANreCDxF2iDaAPsDvW6KtLmfB'
+      )
+    })
 
-    // test('setContentHash sets 32 byte hash', async () => {
-    //   const contentHash =
-    //     'bzz://d1de9994b4d039f6548d191eb26786769f580809256b4685ef316805265ea162'
-    //   await ens.setContenthash('abittooawesome.eth', contentHash)
+    test('setContentHash sets 32 byte hash', async () => {
+      const contentHash =
+        'bzz://d1de9994b4d039f6548d191eb26786769f580809256b4685ef316805265ea162'
+      await ens.name('abittooawesome.eth').setContenthash(contentHash)
 
-    //   const content = await ens.getContent('abittooawesome.eth')
-    //   expect(content.contentType).toBe('contenthash')
-    //   expect(content.value).toBe(
-    //     'bzz://d1de9994b4d039f6548d191eb26786769f580809256b4685ef316805265ea162'
-    //   )
-    // })
+      const content = await ens.name('abittooawesome.eth').getContent()
+      expect(content.contentType).toBe('contenthash')
+      expect(content.value).toBe(
+        'bzz://d1de9994b4d039f6548d191eb26786769f580809256b4685ef316805265ea162'
+      )
+    })
+
+    test('getText gets a text record', async () => {
+      //reverts if no addr is present
+      const resolverAddr = await ens.name('resolver.eth').getAddress()
+      const tx = await ensContract.setResolver(
+        namehash('resolver.eth'),
+        resolverAddr
+      )
+      await tx.wait()
+
+      const resolverContract = await getResolverContract({
+        provider: signer,
+        address: resolverAddr,
+      })
+
+      const tx2 = await resolverContract.setText(
+        namehash('resolver.eth'),
+        'url',
+        'blahblahblah'
+      )
+      await tx2.wait()
+      const textRecord = await ens.name('resolver.eth').getText('url')
+      expect(textRecord).toBe('blahblahblah')
+    })
+
+    test('setText sets a text record', async () => {
+      //reverts if no addr is present
+      const resolverAddr = await ens.name('resolver.eth').getAddress()
+      const tx = await ensContract.setResolver(
+        namehash('superawesome.eth'),
+        resolverAddr
+      )
+      await tx.wait()
+      const tx2 = await ens
+        .name('superawesome.eth')
+        .setText('url', 'http://google.com')
+      await tx2.wait()
+      const textRecord = await ens.name('superawesome.eth').getText('url')
+      expect(textRecord).toBe('http://google.com')
+    })
   })
 
   describe('Reverse Registrar', () => {

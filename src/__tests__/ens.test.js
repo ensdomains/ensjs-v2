@@ -60,6 +60,7 @@ describe('Blockchain tests', () => {
     } = await deployENS({
       web3,
       accounts,
+      dnssec: true,
     })
 
     baseRegistrar = baseRegistrarAddress

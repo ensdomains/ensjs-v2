@@ -26,17 +26,172 @@ function getENSContract({ address, provider }) {
   return new ethers.Contract(address, ensContract, provider)
 }
 
+async function getAddrWithResolver({ name, key, resolverAddr, provider }) {
+  const nh = namehash(name)
+  try {
+    const Resolver = getResolverContract({
+      address: resolverAddr,
+      provider,
+    })
+    const { coinType, encoder } = formatsByName[key]
+    const addr = await Resolver['addr(bytes32,uint256)'](nh, coinType)
+    if (addr === '0x') return emptyAddress
+
+    return encoder(Buffer.from(addr.slice(2), 'hex'))
+  } catch (e) {
+    console.log(e)
+    console.warn(
+      'Error getting addr on the resolver contract, are you sure the resolver address is a resolver contract?'
+    )
+    return emptyAddress
+  }
+}
+
+async function setAddrWithResolver({
+  name,
+  key,
+  address,
+  resolverAddr,
+  signer,
+}) {
+  const nh = namehash(name)
+  const Resolver = getResolverContract({
+    address: resolverAddr,
+    provider: signer,
+  })
+  const { decoder, coinType } = formatsByName[key]
+  let addressAsBytes
+  if (!address || address === '') {
+    addressAsBytes = Buffer.from('')
+  } else {
+    addressAsBytes = decoder(address)
+  }
+  return Resolver['setAddr(bytes32,uint256,bytes)'](
+    nh,
+    coinType,
+    addressAsBytes
+  )
+}
+
+async function getContentWithResolver({ name, resolverAddr, provider }) {
+  const nh = namehash(name)
+  if (parseInt(resolverAddr, 16) === 0) {
+    return emptyAddress
+  }
+  try {
+    const Resolver = getResolverContract({
+      address: resolverAddr,
+      provider: this.provider,
+    })
+    const contentHashSignature = utils
+      .solidityKeccak256(['string'], ['contenthash(bytes32)'])
+      .slice(0, 10)
+
+    const isContentHashSupported = await Resolver.supportsInterface(
+      contentHashSignature
+    )
+
+    if (isContentHashSupported) {
+      const { protocolType, decoded, error } = decodeContenthash(
+        await Resolver.contenthash(nh)
+      )
+      if (error) {
+        console.log('error decoding', error)
+        return {
+          value: emptyAddress,
+          contentType: 'contenthash',
+        }
+      }
+      return {
+        value: `${protocolType}://${decoded}`,
+        contentType: 'contenthash',
+      }
+    } else {
+      const value = await Resolver.content(nh)
+      return {
+        value,
+        contentType: 'oldcontent',
+      }
+    }
+  } catch (e) {
+    const message =
+      'Error getting content on the resolver contract, are you sure the resolver address is a resolver contract?'
+    console.warn(message, e)
+    return { value: message, contentType: 'error' }
+  }
+}
+
+async function setContenthashWithResolver({
+  name,
+  content,
+  resolverAddr,
+  signer,
+}) {
+  let encodedContenthash = content
+  if (parseInt(content, 16) !== 0) {
+    encodedContenthash = encodeContenthash(content)
+  }
+  const Resolver = getResolverContract({
+    address: resolverAddr,
+    provider: signer,
+  })
+  return Resolver.setContenthash(this.namehash, encodedContenthash)
+}
+
+async function getTextWithResolver({ name, key, resolverAddr, provider }) {
+  const nh = namehash(name)
+  if (parseInt(resolverAddr, 16) === 0) {
+    return ''
+  }
+  try {
+    const Resolver = getResolverContract({
+      address: resolverAddr,
+      provider,
+    })
+    const addr = await Resolver.text(nh, key)
+    return addr
+  } catch (e) {
+    console.warn(
+      'Error getting text record on the resolver contract, are you sure the resolver address is a resolver contract?'
+    )
+    return ''
+  }
+}
+
+async function setTextWithResolver({
+  name,
+  key,
+  recordValue,
+  resolverAddr,
+  signer,
+}) {
+  const nh = namehash(name)
+  return getResolverContract({
+    address: resolverAddr,
+    provider: signer,
+  }).setText(nh, key, recordValue)
+}
+
 class Resolver {
   //TODO
   constructor({ address, ens }) {
     this.address = address
     this.ens = ens
   }
+  name(name) {
+    return new Name({
+      name,
+      ens: this.ens,
+      provider: this.provider,
+      signer: this.signer,
+      resolver: this.address,
+    })
+  }
 }
 
 class Name {
   constructor(options) {
-    const { name, ens, provider, signer, namehash: nh } = options
+    const { name, ens, provider, signer, namehash: nh, resolver } = options
     if (options.namehash) {
       this.namehash = nh
     }
@@ -46,6 +201,7 @@ class Name {
     this.namehash = namehash(name)
     this.provider = provider
     this.signer = signer
+    this.resolver = resolver
   }
 
   async getOwner() {
@@ -70,8 +226,17 @@ class Name {
     return this.ens.ttl(this.namehash)
   }
 
+  async getResolverAddr() {
+    if (this.resolver) {
+      return this.resolver // hardcoded for old resolvers or specific resolvers
+    } else {
+      return this.getResolver()
+    }
+  }
+
   async getAddress(coinId) {
-    const resolverAddr = await this.getResolver()
+    const resolverAddr = await getResolverAddr()
+
     if (parseInt(resolverAddr, 16) === 0) return emptyAddress
     const Resolver = getResolverContract({
       address: resolverAddr,
@@ -82,159 +247,57 @@ class Name {
     }
     //TODO add coinID
 
-    return this.getAddrWithResolver(coinId, resolverAddr)
-  }
-
-  async getAddrWithResolver(key, resolverAddr) {
-    try {
-      const Resolver = getResolverContract({
-        address: resolverAddr,
-        provider: this.provider,
-      })
-      const { coinType, encoder } = formatsByName[key]
-      const addr = await Resolver['addr(bytes32,uint256)'](
-        this.namehash,
-        coinType
-      )
-      if (addr === '0x') return emptyAddress
-
-      return encoder(Buffer.from(addr.slice(2), 'hex'))
-    } catch (e) {
-      console.log(e)
-      console.warn(
-        'Error getting addr on the resolver contract, are you sure the resolver address is a resolver contract?'
-      )
-      return emptyAddress
-    }
+    return getAddrWithResolver({
+      name: this.name,
+      key: coinId,
+      resolverAddr,
+      provider: this.provider,
+    })
   }
 
   async setAddress(key, address) {
-    const resolverAddr = await this.getResolver()
-    return this.setAddrWithResolver(key, address, resolverAddr)
-  }
-
-  async setAddrWithResolver(key, address, resolverAddr) {
-    const Resolver = getResolverContract({
-      address: resolverAddr,
-      provider: this.signer,
+    const resolverAddr = await getResolverAddr()
+    return setAddrWithResolver({
+      name: this.name,
+      key,
+      address,
+      resolverAddr,
+      signer: this.signer,
     })
-    const { decoder, coinType } = formatsByName[key]
-    let addressAsBytes
-    if (!address || address === '') {
-      addressAsBytes = Buffer.from('')
-    } else {
-      addressAsBytes = decoder(address)
-    }
-    return Resolver['setAddr(bytes32,uint256,bytes)'](
-      this.namehash,
-      coinType,
-      addressAsBytes
-    )
   }
 
   async getContent() {
-    const resolver = await this.getResolver()
-    return this.getContentWithResolver(resolver)
-  }
-
-  async getContentWithResolver(resolverAddr) {
-    if (parseInt(resolverAddr, 16) === 0) {
-      return emptyAddress
-    }
-    try {
-      const Resolver = getResolverContract({
-        address: resolverAddr,
-        provider: this.provider,
-      })
-      const contentHashSignature = utils
-        .solidityKeccak256(['string'], ['contenthash(bytes32)'])
-        .slice(0, 10)
-
-      const isContentHashSupported = await Resolver.supportsInterface(
-        contentHashSignature
-      )
-
-      if (isContentHashSupported) {
-        const { protocolType, decoded, error } = decodeContenthash(
-          await Resolver.contenthash(this.namehash)
-        )
-        if (error) {
-          console.log('error decoding', error)
-          return {
-            value: emptyAddress,
-            contentType: 'contenthash',
-          }
-        }
-        return {
-          value: `${protocolType}://${decoded}`,
-          contentType: 'contenthash',
-        }
-      } else {
-        const value = await Resolver.content(this.namehash)
-        return {
-          value,
-          contentType: 'oldcontent',
-        }
-      }
-    } catch (e) {
-      const message =
-        'Error getting content on the resolver contract, are you sure the resolver address is a resolver contract?'
-      console.warn(message, e)
-      return { value: message, contentType: 'error' }
-    }
+    const resolverAddr = await getResolverAddr()
+    return getContentWithResolver({
+      name: this.name,
+      resolverAddr,
+      provider: this.provider,
+    })
   }
 
   async setContenthash(content) {
-    const resolverAddr = await this.getResolver(this.name)
-    return this.setContenthashWithResolver(content, resolverAddr)
-  }
-
-  async setContenthashWithResolver(content, resolverAddr) {
-    let encodedContenthash = content
-    if (parseInt(content, 16) !== 0) {
-      encodedContenthash = encodeContenthash(content)
-    }
-    const Resolver = getResolverContract({
-      address: resolverAddr,
-      provider: this.signer,
+    const resolverAddr = await getResolverAddr()
+    return setContenthashWithResolver({
+      name,
+      content,
+      resolverAddr,
+      signer: this.signer,
     })
-    return Resolver.setContenthash(this.namehash, encodedContenthash)
   }
 
   async getText(key) {
-    const resolverAddr = await this.getResolver(this.name)
-    return this.getTextWithResolver(key, resolverAddr)
-  }
-
-  async getTextWithResolver(key, resolverAddr) {
-    if (parseInt(resolverAddr, 16) === 0) {
-      return ''
-    }
-    try {
-      const Resolver = getResolverContract({
-        address: resolverAddr,
-        provider: this.provider,
-      })
-      const addr = await Resolver.text(this.namehash, key)
-      return addr
-    } catch (e) {
-      console.warn(
-        'Error getting text record on the resolver contract, are you sure the resolver address is a resolver contract?'
-      )
-      return ''
-    }
+    const resolverAddr = await getResolverAddr()
+    return getTextWithResolver({
+      name,
+      key,
+      resolverAddr,
+      provider: this.provider,
+    })
   }
 
   async setText(key, recordValue) {
-    const resolverAddr = await this.getResolver(this.name)
-    return this.setTextWithResolver(key, recordValue, resolverAddr)
-  }
-
-  async setTextWithResolver(key, recordValue, resolverAddr) {
-    return getResolverContract({
-      address: resolverAddr,
-      provider: this.signer,
-    }).setText(this.namehash, key, recordValue)
+    const resolverAddr = await getResolverAddr()
+    return setTextWithResolver(key, recordValue, resolverAddr)
   }
 
   async setSubnodeOwner(label, newOwner) {
@@ -287,7 +350,11 @@ export default class ENS {
   }
 
   resolver(address) {
-    return new Resolver({ ens: this.ens, provider: this.provider })
+    return new Resolver({
+      ens: this.ens,
+      provider: this.provider,
+      address: address,
+    })
   }
 
   async getName(address) {

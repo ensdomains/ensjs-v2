@@ -18,6 +18,10 @@ let registries = {
   5: '0x112234455c3a32fd11230c42e7bccd4a84e02010',
 }
 
+function getEnsAddress(networkId) {
+  return registries[networkId]
+}
+
 function getResolverContract({ address, provider }) {
   return new ethers.Contract(address, resolverContract, provider)
 }
@@ -256,6 +260,13 @@ class Name {
   }
 
   async setAddress(key, address) {
+    if (!key) {
+      throw new Error('No coinId provided')
+    }
+
+    if (!address) {
+      throw new Error('No address provided')
+    }
     const resolverAddr = await getResolverAddr()
     return setAddrWithResolver({
       name: this.name,
@@ -385,9 +396,15 @@ export default class ENS {
       console.log(`Error getting name for reverse record of ${address}`, e)
     }
   }
-  setReverseRecord() {
+  setReverseRecord(name) {
     //TODO
   }
 }
 
-export { namehash, labelhash, getENSContract, getResolverContract }
+export {
+  namehash,
+  labelhash,
+  getENSContract,
+  getResolverContract,
+  getEnsAddress,
+}

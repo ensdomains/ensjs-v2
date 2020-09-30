@@ -60,7 +60,6 @@ describe('Blockchain tests', () => {
     } = await deployENS({
       web3,
       accounts,
-      dnssec: true,
     })
 
     baseRegistrar = baseRegistrarAddress
@@ -347,15 +346,15 @@ describe('Blockchain tests', () => {
       expect(name).toBe('eth')
     })
 
-    // test('claimAndSetReverseRecordName claims and sets a name', async () => {
-    //   const accounts = await getAccounts()
-    //   const { name } = await ens.getName(accounts[0])
-    //   expect(name).toBe('abittooawesome.eth')
-    //   const tx = await ens.claimAndSetReverseRecordName('resolver.eth', 2000000)
-    //   await tx.wait()
-    //   const { name: nameAfter } = await ens.getName(accounts[0])
-    //   expect(nameAfter).toBe('resolver.eth')
-    // })
+    test('claimAndSetReverseRecordName claims and sets a name', async () => {
+      const accounts = await getAccounts()
+      const { name } = await ens.getName(accounts[0])
+      expect(name).toBe('abittooawesome.eth')
+      const tx = await ens.setReverseRecord('resolver.eth')
+      await tx.wait()
+      const { name: nameAfter } = await ens.getName(accounts[0])
+      expect(nameAfter).toBe('resolver.eth')
+    })
   })
 
   //   describe('Helper functions', () => {

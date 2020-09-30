@@ -2,6 +2,7 @@ import { ethers } from 'ethers'
 import { formatsByName } from '@ensdomains/address-encoder'
 import { abi as ensContract } from '@ensdomains/ens/build/contracts/ENS.json'
 import { abi as resolverContract } from '@ensdomains/resolver/build/contracts/Resolver.json'
+import { abi as reverseRegistrarContract } from '@ensdomains/ens/build/contracts/ReverseRegistrar.json'
 
 import { emptyAddress, namehash, labelhash } from './utils'
 import {
@@ -28,6 +29,10 @@ function getResolverContract({ address, provider }) {
 
 function getENSContract({ address, provider }) {
   return new ethers.Contract(address, ensContract, provider)
+}
+
+function getReverseRegistrarContract({ address, provider }) {
+  return new ethers.Contract(address, reverseRegistrarContract, provider)
 }
 
 async function getAddrWithResolver({ name, key, resolverAddr, provider }) {
@@ -85,7 +90,7 @@ async function getContentWithResolver({ name, resolverAddr, provider }) {
   try {
     const Resolver = getResolverContract({
       address: resolverAddr,
-      provider: this.provider,
+      provider,
     })
     const contentHashSignature = utils
       .solidityKeccak256(['string'], ['contenthash(bytes32)'])
@@ -139,7 +144,7 @@ async function setContenthashWithResolver({
     address: resolverAddr,
     provider: signer,
   })
-  return Resolver.setContenthash(this.namehash, encodedContenthash)
+  return Resolver.setContenthash(namehash(name), encodedContenthash)
 }
 
 async function getTextWithResolver({ name, key, resolverAddr, provider }) {
@@ -239,7 +244,7 @@ class Name {
   }
 
   async getAddress(coinId) {
-    const resolverAddr = await getResolverAddr()
+    const resolverAddr = await this.getResolverAddr()
 
     if (parseInt(resolverAddr, 16) === 0) return emptyAddress
     const Resolver = getResolverContract({
@@ -267,7 +272,7 @@ class Name {
     if (!address) {
       throw new Error('No address provided')
     }
-    const resolverAddr = await getResolverAddr()
+    const resolverAddr = await this.getResolverAddr()
     return setAddrWithResolver({
       name: this.name,
       key,
@@ -278,7 +283,7 @@ class Name {
   }
 
   async getContent() {
-    const resolverAddr = await getResolverAddr()
+    const resolverAddr = await this.getResolverAddr()
     return getContentWithResolver({
       name: this.name,
       resolverAddr,
@@ -287,9 +292,10 @@ class Name {
   }
 
   async setContenthash(content) {
-    const resolverAddr = await getResolverAddr()
+    const resolverAddr = await this.getResolverAddr()
+    console.log(content)
     return setContenthashWithResolver({
-      name,
+      name: this.name,
       content,
       resolverAddr,
       signer: this.signer,
@@ -297,9 +303,9 @@ class Name {
   }
 
   async getText(key) {
-    const resolverAddr = await getResolverAddr()
+    const resolverAddr = await this.getResolverAddr()
     return getTextWithResolver({
-      name,
+      name: this.name,
       key,
       resolverAddr,
       provider: this.provider,
@@ -307,8 +313,14 @@ class Name {
   }
 
   async setText(key, recordValue) {
-    const resolverAddr = await getResolverAddr()
-    return setTextWithResolver(key, recordValue, resolverAddr)
+    const resolverAddr = await this.getResolverAddr()
+    return setTextWithResolver({
+      name: this.name,
+      key,
+      recordValue,
+      resolverAddr,
+      signer: this.signer,
+    })
   }
 
   async setSubnodeOwner(label, newOwner) {
@@ -396,8 +408,16 @@ export default class ENS {
       console.log(`Error getting name for reverse record of ${address}`, e)
     }
   }
-  setReverseRecord(name) {
-    //TODO
+
+  async setReverseRecord(name, overrides) {
+    const reverseRegistrarAddr = await this.name('addr.reverse').getOwner(
+      'addr.reverse'
+    )
+    const reverseRegistrar = getReverseRegistrarContract({
+      address: reverseRegistrarAddr,
+      provider: this.signer,
+    })
+    return reverseRegistrar.setName(name)
   }
 }
 

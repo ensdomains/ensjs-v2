@@ -12,15 +12,10 @@ import {
 } from './utils/contents'
 const utils = ethers.utils
 
-let registries = {
-  1: '0x314159265dd8dbb310642f98f50c066173c1259b',
-  3: '0x112234455c3a32fd11230c42e7bccd4a84e02010',
-  4: '0xe7410170f87102df0055eb195163a03b7f2bff4a',
-  5: '0x112234455c3a32fd11230c42e7bccd4a84e02010',
-}
-
 function getEnsAddress(networkId) {
-  return registries[networkId]
+  if ([1,3,4,5].includes(parseInt(networkId))){
+    return '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e'
+  }
 }
 
 function getResolverContract({ address, provider }) {
@@ -245,7 +240,6 @@ class Name {
 
   async getAddress(coinId) {
     const resolverAddr = await this.getResolverAddr()
-
     if (parseInt(resolverAddr, 16) === 0) return emptyAddress
     const Resolver = getResolverContract({
       address: resolverAddr,

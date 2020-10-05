@@ -1,6 +1,6 @@
 {
-  "name": "ensjs-v2",
-  "version": "0.0.5",
+  "name": "@ensdomains/ensjs",
+  "version": "0.2.0",
   "description": "ens.js v2",
   "main": "dist/index.js",
   "files": [
@@ -9,7 +9,7 @@
   "scripts": {
     "test": "jest --watch --verbose",
     "build": "babel src -d dist --ignore src/**/*.test.js,**/__tests__/**,src/testing-utils",
-    "pub": "yarn build && yarn publish"
+    "pub": "yarn build && yarn publish --access public"
   },
   "author": "",
   "license": "ISC",

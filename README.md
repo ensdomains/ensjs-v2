@@ -1,11 +1,13 @@
 # ENS.js V2
 
+This is the rewrite of `ensjs`. If you are looking for the previous version, look for [ethereum-ens](https://www.npmjs.com/package/ethereum-ens)
+
 ## Overview of the API
 
 ### Setup
 
 ```
-import ENS, { getEnsAddress } from '@ensdomains/ensjs2'
+import ENS, { getEnsAddress } from '@ensdomains/ensjs'
 
 
 

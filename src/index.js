@@ -1,4 +1,5 @@
 import { ethers } from 'ethers'
+const Provider = ethers.providers.Provider
 import { formatsByName } from '@ensdomains/address-encoder'
 import { abi as ensContract } from '@ensdomains/ens/build/contracts/ENS.json'
 import { abi as resolverContract } from '@ensdomains/resolver/build/contracts/Resolver.json'
@@ -13,7 +14,7 @@ import {
 const utils = ethers.utils
 
 function getEnsAddress(networkId) {
-  if ([1,3,4,5].includes(parseInt(networkId))){
+  if ([1, 3, 4, 5].includes(parseInt(networkId))) {
     return '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e'
   }
 }
@@ -348,7 +349,13 @@ class Name {
 export default class ENS {
   constructor(options) {
     const { networkId, provider, ensAddress } = options
-    const ethersProvider = new ethers.providers.Web3Provider(provider)
+    let ethersProvider
+    if (Provider.isProvider(provider)) {
+      //detect ethersProvider
+      ethersProvider = provider
+    } else {
+      ethersProvider = new ethers.providers.Web3Provider(provider)
+    }
     this.provider = ethersProvider
     this.signer = ethersProvider.getSigner()
     this.ens = getENSContract({

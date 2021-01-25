@@ -1,0 +1,3 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Blockchain tests Resolver getContent returns a 32 byte hash 1`] = `"0x736f6d65436f6e74656e74000000000000000000000000000000000000000000"`;

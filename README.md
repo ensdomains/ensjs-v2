@@ -158,3 +158,7 @@ name(name) => Name
 ```
 
 Returns a Name Object that hardcodes the resolver
+
+## NOTE
+
+The previous version of `ensjs` can be found at https://github.com/ensdomains/ensjs/tree/v1

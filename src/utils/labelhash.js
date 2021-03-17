@@ -41,6 +41,12 @@ export function isDecrypted(name) {
   return decrypted
 }
 
+/**
+ * Hash Label
+ *
+ * @param {string} unnormalisedLabelOrLabelhash
+ * @returns {string}
+ */
 export function labelhash(unnormalisedLabelOrLabelhash) {
   return isEncodedLabelhash(unnormalisedLabelOrLabelhash)
     ? '0x' + decodeLabelhash(unnormalisedLabelOrLabelhash)

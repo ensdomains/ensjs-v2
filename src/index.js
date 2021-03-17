@@ -19,10 +19,25 @@ function getEnsAddress(networkId) {
   }
 }
 
+/**
+ * Get Resolver Contract
+ * // todo is Provider here meant to be provider from web3-core ? (may need to upgrade web3 library)
+ *
+ * @param {{address: string, provider: Provider}}
+ * @returns {Contract}
+ */
 function getResolverContract({ address, provider }) {
   return new ethers.Contract(address, resolverContract, provider)
 }
 
+/**
+ * Get ENS Contract
+ *
+ * // todo is Provider here meant to be provider from web3-core ? (may need to upgrade web3 library)
+ *
+ * @param {{address: string, provider: Provider}}
+ * @returns {Contract}
+ */
 function getENSContract({ address, provider }) {
   return new ethers.Contract(address, ensContract, provider)
 }

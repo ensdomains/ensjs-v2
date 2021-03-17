@@ -9,7 +9,8 @@
   "scripts": {
     "test": "jest --watch --verbose",
     "build": "babel src -d dist --ignore src/**/*.test.js,**/__tests__/**,src/testing-utils",
-    "pub": "yarn build && yarn publish --access public"
+    "pub": "yarn build && yarn publish --access public",
+    "declaration:build": "rm -f ./index.d.ts && tsc --allowJs -d --emitDeclarationOnly src/index.js"
   },
   "author": "",
   "license": "ISC",
@@ -41,6 +42,7 @@
     "ganache-cli": "^6.4.3",
     "ganache-core": "^2.11.3",
     "jest": "^26.4.2",
+    "typescript": "^4.2.3",
     "web3": "^1.2.11"
   },
   "dependencies": {

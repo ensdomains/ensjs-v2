@@ -500,10 +500,10 @@ class Name {
 export default class ENS {
   /**
    * ENS
-   * @param {Object} [options]
+   * @param {Object} options
    * @param {*} [options.networkId]
    * @param {Provider|provider} options.provider
-   * @param {string} options.ensAddress
+   * @param {string} [options.ensAddress]
    */
   constructor(options) {
     const { networkId, provider, ensAddress } = options

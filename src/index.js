@@ -499,8 +499,8 @@ class Name {
 export default class ENS {
   /**
    * ENS
-   * @param {Object} options
-   * @param {*} options.networkId
+   * @param {Object} [options]
+   * @param {*} [options.networkId]
    * @param {Provider} options.provider
    * @param {string} options.ensAddress
    */

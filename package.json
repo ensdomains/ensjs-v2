@@ -1,6 +1,6 @@
 {
-  "name": "@ensdomains/ensjs",
-  "version": "2.0.0",
+  "name": "@unegma/ensjs",
+  "version": "0.1.3",
   "description": "ens.js v2",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "test": "jest --watch --verbose",
-    "build": "tsc && babel src -d dist --ignore src/**/*.test.js,**/__tests__/**,src/testing-utils",
+    "build": "babel src -d dist --ignore src/**/*.test.js,**/__tests__/**,src/testing-utils && tsc",
     "pub": "yarn build && yarn publish --access public"
   },
   "author": "",

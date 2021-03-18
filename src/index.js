@@ -1,5 +1,6 @@
 import { ethers } from 'ethers'
 const Provider = ethers.providers.Provider
+import { provider } from 'web3-core'; // used for type checking
 import { formatsByName } from '@ensdomains/address-encoder'
 import { abi as ensContract } from '@ensdomains/ens/build/contracts/ENS.json'
 import { abi as resolverContract } from '@ensdomains/resolver/build/contracts/Resolver.json'
@@ -22,7 +23,7 @@ function getEnsAddress(networkId) {
 /**
  * Get Resolver Contract
  *
- * @param {{address: string, provider: Provider}}
+ * @param {{address: string, provider: Provider|provider}}
  * @returns {Contract}
  */
 function getResolverContract({ address, provider }) {
@@ -32,7 +33,7 @@ function getResolverContract({ address, provider }) {
 /**
  * Get ENS Contract
  *
- * @param {{address: string, provider: Provider}}
+ * @param {{address: string, provider: Provider|provider}}
  * @returns {Contract}
  */
 function getENSContract({ address, provider }) {
@@ -50,7 +51,7 @@ function getReverseRegistrarContract({ address, provider }) {
 
 /**
  * Get address with resolver
- * @param {{name: string, key: string, resolverAddr: string, provider: Provider}}
+ * @param {{name: string, key: string, resolverAddr: string, provider: Provider|provider}}
  * @returns {*}
  */
 async function getAddrWithResolver({ name, key, resolverAddr, provider }) {
@@ -76,7 +77,7 @@ async function getAddrWithResolver({ name, key, resolverAddr, provider }) {
 
 /**
  * Set address with resolver
- * @param {{name: string, key: string, address: string, resolverAddr: string, signer: Provider}}
+ * @param {{name: string, key: string, address: string, resolverAddr: string, signer: Provider|provider}}
  * @returns {*}
  */
 async function setAddrWithResolver({
@@ -107,7 +108,7 @@ async function setAddrWithResolver({
 
 /**
  * Get content with resolver
- * @param {{name: string, resolverAddr: string, provider: Provider}}
+ * @param {{name: string, resolverAddr: string, provider: Provider|provider}}
  * @returns {*}
  */
 async function getContentWithResolver({ name, resolverAddr, provider }) {
@@ -160,7 +161,7 @@ async function getContentWithResolver({ name, resolverAddr, provider }) {
 
 /**
  * Set contenthash with resolver
- * @param {{name: string, content: string, resolverAddr: string, signer: Provider}}
+ * @param {{name: string, content: string, resolverAddr: string, signer: Provider|provider}}
  * @returns {*}
  */
 async function setContenthashWithResolver({
@@ -182,7 +183,7 @@ async function setContenthashWithResolver({
 
 /**
  * Get text with resolver
- * @param {{name: string, key: string, resolverAddr: string, provider: Provider}}
+ * @param {{name: string, key: string, resolverAddr: string, provider: Provider|provider}}
  * @returns {Promise<string|*>}
  */
 async function getTextWithResolver({ name, key, resolverAddr, provider }) {
@@ -207,7 +208,7 @@ async function getTextWithResolver({ name, key, resolverAddr, provider }) {
 
 /**
  * Set text with resolver
- * @param {{name: string, key: string, recordValue: *, resolverAddr: string, signer: Provider}}
+ * @param {{name: string, key: string, recordValue: *, resolverAddr: string, signer: Provider|provider}}
  * @returns {Promise<*|< | >>}
  */
 async function setTextWithResolver({
@@ -258,8 +259,8 @@ class Name {
    * @param {Object} options
    * @param {Name} options.name
    * @param {ENS} options.ens
-   * @param {Provider} options.provider
-   * @param {Provider} options.signer
+   * @param {Provider|provider} options.provider
+   * @param {Provider|provider} options.signer
    * @param {string} options.namehash
    * @param {Resolver} options.resolver
    */
@@ -501,7 +502,7 @@ export default class ENS {
    * ENS
    * @param {Object} [options]
    * @param {*} [options.networkId]
-   * @param {Provider} options.provider
+   * @param {Provider|provider} options.provider
    * @param {string} options.ensAddress
    */
   constructor(options) {

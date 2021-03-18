@@ -2,4 +2,7 @@ node_modules
 dist
 yarn-error.log
 *.DS_Store
-.idea
+
+## IDE folders
+.idea/
+.viscode/

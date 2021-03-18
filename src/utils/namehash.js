@@ -4,6 +4,7 @@ const sha3 = require('js-sha3').keccak_256
 
 /**
  * Hash Name
+ * Returns string in the format 0x..
  *
  * @param {string} inputName
  * @returns {string}

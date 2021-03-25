@@ -336,7 +336,7 @@ class Name {
 
   /**
    * Get Resolver
-   * @param {string} coinId
+   * @param {string} [coinId]
    * @returns {Promise<*>}
    */
   async getAddress(coinId) {

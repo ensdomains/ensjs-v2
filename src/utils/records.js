@@ -2,13 +2,18 @@ import { addressUtils } from '@0xproject/utils'
 import { validateContent } from './contents'
 
 /**
- * @typedef { "address" | "content" | "oldcontent" } recordType
+ * @typedef { "address" | "content" } recordType
+ */
+
+/**
+ * @typedef { "contenthash" | "oldcontent" | null } contentType
  */
 
 /**
  * Validate Record
  * @param {Object} record
  * @param {recordType} record.type The record type
+ * @param {contentType} record.contentType The record contentType
  * @param {string} record.value The record value
  * @throws {Error} will throw an error if unrecognised record type
  * @returns {boolean|any}
@@ -33,10 +38,6 @@ export function validateRecord(record) {
       throw new Error('Unrecognised record type')
   }
 }
-
-/**
- * @typedef { "contenthash" } contentType
- */
 
 /**
  * Get Place Holder

@@ -28,7 +28,7 @@ export function validateRecord(record) {
     case 'address':
       return addressUtils.isAddress(value)
     case 'content':
-      return validateContent(value) // todo wil this ever be reached? if type is 'content', the above if statement will be triggered
+      return validateContent(value)
     default:
       throw new Error('Unrecognised record type')
   }

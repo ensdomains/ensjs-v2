@@ -14,7 +14,6 @@ import { validateContent } from './contents'
  * @returns {boolean|any}
  */
 export function validateRecord(record) {
-  // todo removeme Info: using typescript means that we can verify record.type whilst we are coding/compile time instead of at run time
   if (!record.type) {
     return false
   }

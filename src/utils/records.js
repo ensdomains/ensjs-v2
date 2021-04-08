@@ -2,7 +2,7 @@ import { addressUtils } from '@0xproject/utils'
 import { validateContent } from './contents'
 
 /**
- * @typedef { "address" | "content" } recordType
+ * @typedef { "address" | "content" | null } recordType
  */
 
 /**

@@ -6,7 +6,7 @@ import { validateContent } from './contents'
  */
 
 /**
- * @typedef { "contenthash" | "oldcontent" | null } contentType
+ * @typedef { "contenthash" | "oldcontent" | "error" | null } contentType
  */
 
 /**

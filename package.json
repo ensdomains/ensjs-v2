@@ -1,6 +1,6 @@
 {
   "name": "@ensdomains/ensjs",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "ens.js v2",
   "main": "dist/index.js",
   "files": [
@@ -22,7 +22,7 @@
     "@babel/plugin-transform-spread": "^7.2.2",
     "@babel/polyfill": "^7.4.4",
     "@babel/preset-env": "^7.4.4",
-    "@ensdomains/mock": "^2.0.31",
+    "@ensdomains/mock": "^2.0.37",
     "babel-eslint": "^9.0.0",
     "babel-jest": "^23.6.0",
     "babel-jest-assertions": "^0.1.0",
@@ -44,7 +44,6 @@
     "web3": "^1.2.11"
   },
   "dependencies": {
-    "@0xproject/utils": "^2.0.2",
     "@babel/runtime": "^7.4.4",
     "@ensdomains/address-encoder": "^0.1.7",
     "@ensdomains/ens": "0.4.3",

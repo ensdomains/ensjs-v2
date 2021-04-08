@@ -1,4 +1,4 @@
-import { addressUtils } from '@0xproject/utils'
+import { ethers } from 'ethers'
 
 import {
   isEncodedLabelhash,
@@ -90,7 +90,7 @@ const parseSearchTerm = (term, validTld) => {
     }
 
     return 'unsupported'
-  } else if (addressUtils.isAddress(term)) {
+  } else if (ethers.utils.isAddress(term)) {
     return 'address'
   } else {
     //check if the search term is actually a tld

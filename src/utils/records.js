@@ -1,4 +1,4 @@
-import { addressUtils } from '@0xproject/utils'
+import { ethers } from 'ethers'
 import { validateContent } from './contents'
 export function validateRecord(record) {
   if (!record.type) {
@@ -13,7 +13,7 @@ export function validateRecord(record) {
 
   switch (type) {
     case 'address':
-      return addressUtils.isAddress(value)
+      return ethers.utils.isAddress(value)
     case 'content':
       return validateContent(value)
     default:

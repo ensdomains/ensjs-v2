@@ -1,6 +1,6 @@
 const HEX_REGEX = /^0x[0-9A-F]*$/i
 
-import { addressUtils } from '@0xproject/utils'
+import { ethers } from 'ethers'
 
 expect.extend({
   toBeHex(received) {
@@ -20,7 +20,7 @@ expect.extend({
   },
   toBeEthAddress(received) {
     const pass =
-      typeof received === 'string' && addressUtils.isAddress(received)
+      typeof received === 'string' && ethers.utils.isAddress(received)
 
     if (pass) {
       return {

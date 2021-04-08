@@ -1,5 +1,6 @@
 import { ethers } from 'ethers'
 const Provider = ethers.providers.Provider
+import { provider } from 'web3-core'; // used for type checking
 import { formatsByName } from '@ensdomains/address-encoder'
 import { abi as ensContract } from '@ensdomains/ens/build/contracts/ENS.json'
 import { abi as resolverContract } from '@ensdomains/resolver/build/contracts/Resolver.json'
@@ -19,18 +20,40 @@ function getEnsAddress(networkId) {
   }
 }
 
+/**
+ * Get Resolver Contract
+ *
+ * @param {{address: string, provider: Provider|provider}}
+ * @returns {Contract}
+ */
 function getResolverContract({ address, provider }) {
   return new ethers.Contract(address, resolverContract, provider)
 }
 
+/**
+ * Get ENS Contract
+ *
+ * @param {{address: string, provider: Provider|provider}}
+ * @returns {Contract}
+ */
 function getENSContract({ address, provider }) {
   return new ethers.Contract(address, ensContract, provider)
 }
 
+/**
+ * Get Reverse Registrar Contract
+ * @param {{address: string, provider: Provider}}
+ * @returns {Contract}
+ */
 function getReverseRegistrarContract({ address, provider }) {
   return new ethers.Contract(address, reverseRegistrarContract, provider)
 }
 
+/**
+ * Get address with resolver
+ * @param {{name: string, key: string, resolverAddr: string, provider: Provider|provider}}
+ * @returns {*}
+ */
 async function getAddrWithResolver({ name, key, resolverAddr, provider }) {
   const nh = namehash(name)
   try {
@@ -52,6 +75,11 @@ async function getAddrWithResolver({ name, key, resolverAddr, provider }) {
   }
 }
 
+/**
+ * Set address with resolver
+ * @param {{name: string, key: string, address: string, resolverAddr: string, signer: Provider|provider}}
+ * @returns {*}
+ */
 async function setAddrWithResolver({
   name,
   key,
@@ -78,6 +106,11 @@ async function setAddrWithResolver({
   )
 }
 
+/**
+ * Get content with resolver
+ * @param {{name: string, resolverAddr: string, provider: Provider|provider}}
+ * @returns {*}
+ */
 async function getContentWithResolver({ name, resolverAddr, provider }) {
   const nh = namehash(name)
   if (parseInt(resolverAddr, 16) === 0) {
@@ -126,6 +159,11 @@ async function getContentWithResolver({ name, resolverAddr, provider }) {
   }
 }
 
+/**
+ * Set contenthash with resolver
+ * @param {{name: string, content: string, resolverAddr: string, signer: Provider|provider}}
+ * @returns {*}
+ */
 async function setContenthashWithResolver({
   name,
   content,
@@ -143,6 +181,11 @@ async function setContenthashWithResolver({
   return Resolver.setContenthash(namehash(name), encodedContenthash)
 }
 
+/**
+ * Get text with resolver
+ * @param {{name: string, key: string, resolverAddr: string, provider: Provider|provider}}
+ * @returns {Promise<string|*>}
+ */
 async function getTextWithResolver({ name, key, resolverAddr, provider }) {
   const nh = namehash(name)
   if (parseInt(resolverAddr, 16) === 0) {
@@ -163,6 +206,11 @@ async function getTextWithResolver({ name, key, resolverAddr, provider }) {
   }
 }
 
+/**
+ * Set text with resolver
+ * @param {{name: string, key: string, recordValue: *, resolverAddr: string, signer: Provider|provider}}
+ * @returns {Promise<*|< | >>}
+ */
 async function setTextWithResolver({
   name,
   key,
@@ -178,11 +226,22 @@ async function setTextWithResolver({
 }
 
 class Resolver {
-  //TODO
+
+  /**
+   * Resolver
+   * {{address: string, ens: ENS}}
+   */
   constructor({ address, ens }) {
     this.address = address
     this.ens = ens
   }
+
+  /**
+   * name
+   *
+   * @param {string} name
+   * @returns {Name}
+   */
   name(name) {
     return new Name({
       name,
@@ -195,6 +254,16 @@ class Resolver {
 }
 
 class Name {
+  /**
+   * Name
+   * @param {Object} options
+   * @param {Name} options.name
+   * @param {ENS} options.ens
+   * @param {Provider|provider} options.provider
+   * @param {Provider|provider} options.signer
+   * @param {string} options.namehash
+   * @param {Resolver} options.resolver
+   */
   constructor(options) {
     const { name, ens, provider, signer, namehash: nh, resolver } = options
     if (options.namehash) {
@@ -209,28 +278,54 @@ class Name {
     this.resolver = resolver
   }
 
+  /**
+   * Return the owner
+   * @returns {Promise<*>}
+   */
   async getOwner() {
     return this.ens.owner(this.namehash)
   }
 
+  /**
+   * Set the owner
+   * @param {string} address
+   * @returns {Promise<*|< | >>}
+   */
   async setOwner(address) {
     if (!address) throw new Error('No newOwner address provided!')
     return this.ensWithSigner.setOwner(this.namehash, address)
   }
 
+  /**
+   * Get the resolver
+   * @returns {Promise<Resolver>}
+   */
   async getResolver() {
     return this.ens.resolver(this.namehash)
   }
 
+  /**
+   * Set the resolver
+   * @param {string} address
+   * @returns {Promise<*|< | >>}
+   */
   async setResolver(address) {
     if (!address) throw new Error('No resolver address provided!')
     return this.ensWithSigner.setResolver(this.namehash, address)
   }
 
+  /**
+   * Get Time To Live
+   * @returns {Promise<*>}
+   */
   async getTTL() {
     return this.ens.ttl(this.namehash)
   }
 
+  /**
+   * Get Resolver Address
+   * @returns {Promise<Resolver>}
+   */
   async getResolverAddr() {
     if (this.resolver) {
       return this.resolver // hardcoded for old resolvers or specific resolvers
@@ -239,6 +334,11 @@ class Name {
     }
   }
 
+  /**
+   * Get Resolver
+   * @param {string} [coinId]
+   * @returns {Promise<*>}
+   */
   async getAddress(coinId) {
     const resolverAddr = await this.getResolverAddr()
     if (parseInt(resolverAddr, 16) === 0) return emptyAddress
@@ -259,6 +359,12 @@ class Name {
     })
   }
 
+  /**
+   * Set the address
+   * @param {string} key
+   * @param {string} address
+   * @returns {Promise<*>}
+   */
   async setAddress(key, address) {
     if (!key) {
       throw new Error('No coinId provided')
@@ -277,6 +383,10 @@ class Name {
     })
   }
 
+  /**
+   * Get the content
+   * @returns {Promise<*>}
+   */
   async getContent() {
     const resolverAddr = await this.getResolverAddr()
     return getContentWithResolver({
@@ -286,6 +396,11 @@ class Name {
     })
   }
 
+  /**
+   * Set the content hash
+   * @param {string} content
+   * @returns {Promise<*>}
+   */
   async setContenthash(content) {
     const resolverAddr = await this.getResolverAddr()
     console.log(content)
@@ -297,6 +412,11 @@ class Name {
     })
   }
 
+  /**
+   * Get the text
+   * @param {string} key
+   * @returns {Promise<string|*>}
+   */
   async getText(key) {
     const resolverAddr = await this.getResolverAddr()
     return getTextWithResolver({
@@ -307,6 +427,12 @@ class Name {
     })
   }
 
+  /**
+   * Set the text
+   * @param {string} key
+   * @param {*} recordValue
+   * @returns {Promise<*>}
+   */
   async setText(key, recordValue) {
     const resolverAddr = await this.getResolverAddr()
     return setTextWithResolver({
@@ -318,11 +444,26 @@ class Name {
     })
   }
 
+  /**
+   * Set subnode owner
+   * @param {string} label
+   * // todo check this is a string (newOwner)
+   * @param {string} newOwner
+   * @returns {Promise<*|< | >>}
+   */
   async setSubnodeOwner(label, newOwner) {
     const lh = labelhash(label)
     return this.ensWithSigner.setSubnodeOwner(this.namehash, lh, newOwner)
   }
 
+  /**
+   * Set Subnode Record
+   * @param {string} label
+   * @param {string} newOwner
+   * @param {Resolver} resolver
+   * @param {number} ttl
+   * @returns {Promise<*|< | >>}
+   */
   async setSubnodeRecord(label, newOwner, resolver, ttl = 0) {
     const lh = labelhash(label)
     return this.ensWithSigner.setSubnodeRecord(
@@ -334,6 +475,11 @@ class Name {
     )
   }
 
+  /**
+   * Create subdomain
+   * @param {string} label
+   * @returns {Promise<*>}
+   */
   async createSubdomain(label) {
     const resolverPromise = this.getResolver()
     const ownerPromise = this.getOwner()
@@ -341,12 +487,24 @@ class Name {
     return this.setSubnodeRecord(label, owner, resolver)
   }
 
+  /**
+   * Delete Subdomain
+   * @param {string} label
+   * @returns {Promise<*>}
+   */
   async deleteSubdomain(label) {
     return this.setSubnodeRecord(label, emptyAddress, emptyAddress)
   }
 }
 
 export default class ENS {
+  /**
+   * ENS
+   * @param {Object} options
+   * @param {*} [options.networkId]
+   * @param {Provider|provider} options.provider
+   * @param {string} [options.ensAddress]
+   */
   constructor(options) {
     const { networkId, provider, ensAddress } = options
     let ethersProvider
@@ -364,6 +522,11 @@ export default class ENS {
     })
   }
 
+  /**
+   * name
+   * @param {string} name
+   * @returns {Name}
+   */
   name(name) {
     return new Name({
       name,
@@ -373,6 +536,11 @@ export default class ENS {
     })
   }
 
+  /**
+   * resolver
+   * @param {string} address
+   * @returns {Resolver}
+   */
   resolver(address) {
     return new Resolver({
       ens: this.ens,
@@ -381,12 +549,23 @@ export default class ENS {
     })
   }
 
+  /**
+   * getName
+   * @param {string} address
+   * @returns {Promise<{name: null}|{name: *}|undefined>}
+   */
   async getName(address) {
     const reverseNode = `${address.slice(2)}.addr.reverse`
     const resolverAddr = await this.ens.resolver(namehash(reverseNode))
     return this.getNameWithResolver(address, resolverAddr)
   }
 
+  /**
+   * getNameWithResolver
+   * @param {string} address
+   * @param {string} resolverAddr
+   * @returns {Promise<{name: null}|{name: *}>}
+   */
   async getNameWithResolver(address, resolverAddr) {
     const reverseNode = `${address.slice(2)}.addr.reverse`
     const reverseNamehash = namehash(reverseNode)
@@ -410,6 +589,12 @@ export default class ENS {
     }
   }
 
+  /**
+   * setReverseRecord
+   * @param {string} name
+   * @param {*} overrides
+   * @returns {Promise<*>}
+   */
   async setReverseRecord(name, overrides) {
     const reverseRegistrarAddr = await this.name('addr.reverse').getOwner(
       'addr.reverse'

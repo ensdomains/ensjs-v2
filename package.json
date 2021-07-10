@@ -3,6 +3,7 @@
   "version": "2.0.1",
   "description": "ens.js v2",
   "main": "dist/index.js",
+  "repository": "ensdomains/ensjs",
   "files": [
     "dist"
   ],

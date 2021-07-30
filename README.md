@@ -17,7 +17,7 @@ const provider = new ethers.providers.JsonRpcProvider('https://main-light.eth.li
 const ens = new ENS({ provider, ensAddress:getEnsAddress('1') })
 
 ens.name('ens.eth').getAddress().then(addr => console.log(addr)) // 0x123
-
+```
 ```
 // ES5
 const ENSModule = require('@ensdomains/ensjs');

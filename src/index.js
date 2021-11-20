@@ -1,9 +1,9 @@
 import { ethers } from 'ethers'
 const Provider = ethers.providers.Provider
 import { formatsByName } from '@ensdomains/address-encoder'
-import { abi as ensContract } from '@ensdomains/ens/build/contracts/ENS.json'
+import { abi as ensContract } from './ABI/ENS.json'
 import { abi as resolverContract } from '@ensdomains/resolver/build/contracts/Resolver.json'
-import { abi as reverseRegistrarContract } from '@ensdomains/ens/build/contracts/ReverseRegistrar.json'
+import { abi as reverseRegistrarContract } from './ABI/ReverseRegistrar.json'
 
 import { emptyAddress, namehash, labelhash } from './utils'
 import {

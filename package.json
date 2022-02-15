@@ -42,7 +42,7 @@
     "ganache-cli": "^6.4.3",
     "ganache-core": "^2.11.3",
     "jest": "^26.4.2",
-    "web3": "^1.2.11"
+    "web3": "^1.7.0"
   },
   "dependencies": {
     "@babel/runtime": "^7.4.4",

@@ -381,13 +381,13 @@ export default class ENS {
     })
   }
 
-  async getName(address) {
+  async getName(address, blockTag='latest') {
     const reverseNode = `${address.slice(2)}.addr.reverse`
     const resolverAddr = await this.ens.resolver(namehash(reverseNode))
-    return this.getNameWithResolver(address, resolverAddr)
+    return this.getNameWithResolver(address, resolverAddr, blockTag)
   }
 
-  async getNameWithResolver(address, resolverAddr) {
+  async getNameWithResolver(address, resolverAddr, blockTag='latest') {
     const reverseNode = `${address.slice(2)}.addr.reverse`
     const reverseNamehash = namehash(reverseNode)
     if (parseInt(resolverAddr, 16) === 0) {
@@ -401,7 +401,7 @@ export default class ENS {
         address: resolverAddr,
         provider: this.provider,
       })
-      const name = await Resolver.name(reverseNamehash)
+      const name = await Resolver.name(reverseNamehash, { blockTag: blockTag })
       return {
         name,
       }

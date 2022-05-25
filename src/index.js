@@ -1,9 +1,9 @@
 import { ethers } from 'ethers'
 const Provider = ethers.providers.Provider
-import { formatsByName } from '@ensdomains/address-encoder'
-import { abi as ensContract } from '@ensdomains/ens/build/contracts/ENS.json'
-import { abi as resolverContract } from '@ensdomains/resolver/build/contracts/Resolver.json'
-import { abi as reverseRegistrarContract } from '@ensdomains/ens/build/contracts/ReverseRegistrar.json'
+import { formatsByName } from '@siddomains/address-encoder'
+import { abi as sidContract } from '@siddomains/sid/build/contracts/SID.json'
+import { abi as resolverContract } from '@siddomains/resolver/build/contracts/Resolver.json'
+import { abi as reverseRegistrarContract } from '@siddomains/sid/build/contracts/ReverseRegistrar.json'
 
 import { emptyAddress, namehash, labelhash } from './utils'
 import {
@@ -13,9 +13,9 @@ import {
 } from './utils/contents'
 const utils = ethers.utils
 
-function getEnsAddress(networkId) {
-  if ([1, 3, 4, 5].includes(parseInt(networkId))) {
-    return '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e'
+function getSidAddress(networkId) {
+  if ([97].includes(parseInt(networkId))) {
+    return '0x60fcB83fAd91335EBf6e9bB81d79b973bf3DA3e2'
   }
 }
 
@@ -23,8 +23,8 @@ function getResolverContract({ address, provider }) {
   return new ethers.Contract(address, resolverContract, provider)
 }
 
-function getENSContract({ address, provider }) {
-  return new ethers.Contract(address, ensContract, provider)
+function getSIDContract({ address, provider }) {
+  return new ethers.Contract(address, sidContract, provider)
 }
 
 function getReverseRegistrarContract({ address, provider }) {
@@ -179,14 +179,14 @@ async function setTextWithResolver({
 
 class Resolver {
   //TODO
-  constructor({ address, ens }) {
+  constructor({ address, sid }) {
     this.address = address
-    this.ens = ens
+    this.sid = sid
   }
   name(name) {
     return new Name({
       name,
-      ens: this.ens,
+      sid: this.sid,
       provider: this.provider,
       signer: this.signer,
       resolver: this.address,
@@ -196,12 +196,12 @@ class Resolver {
 
 class Name {
   constructor(options) {
-    const { name, ens, provider, signer, namehash: nh, resolver } = options
+    const { name, sid, provider, signer, namehash: nh, resolver } = options
     if (options.namehash) {
       this.namehash = nh
     }
-    this.ens = ens
-    this.ensWithSigner = this.ens.connect(signer)
+    this.sid = sid
+    this.sidWithSigner = this.sid.connect(signer)
     this.name = name
     this.namehash = namehash(name)
     this.provider = provider
@@ -210,25 +210,25 @@ class Name {
   }
 
   async getOwner() {
-    return this.ens.owner(this.namehash)
+    return this.sid.owner(this.namehash)
   }
 
   async setOwner(address) {
     if (!address) throw new Error('No newOwner address provided!')
-    return this.ensWithSigner.setOwner(this.namehash, address)
+    return this.sidWithSigner.setOwner(this.namehash, address)
   }
 
   async getResolver() {
-    return this.ens.resolver(this.namehash)
+    return this.sid.resolver(this.namehash)
   }
 
   async setResolver(address) {
     if (!address) throw new Error('No resolver address provided!')
-    return this.ensWithSigner.setResolver(this.namehash, address)
+    return this.sidWithSigner.setResolver(this.namehash, address)
   }
 
   async getTTL() {
-    return this.ens.ttl(this.namehash)
+    return this.sid.ttl(this.namehash)
   }
 
   async getResolverAddr() {
@@ -320,12 +320,12 @@ class Name {
 
   async setSubnodeOwner(label, newOwner) {
     const lh = labelhash(label)
-    return this.ensWithSigner.setSubnodeOwner(this.namehash, lh, newOwner)
+    return this.sidWithSigner.setSubnodeOwner(this.namehash, lh, newOwner)
   }
 
   async setSubnodeRecord(label, newOwner, resolver, ttl = 0) {
     const lh = labelhash(label)
-    return this.ensWithSigner.setSubnodeRecord(
+    return this.sidWithSigner.setSubnodeRecord(
       this.namehash,
       lh,
       newOwner,
@@ -346,9 +346,9 @@ class Name {
   }
 }
 
-export default class ENS {
+export default class SID {
   constructor(options) {
-    const { networkId, provider, ensAddress } = options
+    const { networkId, provider, sidAddress } = options
     let ethersProvider
     if (Provider.isProvider(provider)) {
       //detect ethersProvider
@@ -358,8 +358,8 @@ export default class ENS {
     }
     this.provider = ethersProvider
     this.signer = ethersProvider.getSigner()
-    this.ens = getENSContract({
-      address: ensAddress ? ensAddress : registries[networkId],
+    this.sid = getSIDContract({
+      address: sidAddress ? sidAddress : registries[networkId],
       provider: ethersProvider,
     })
   }
@@ -367,7 +367,7 @@ export default class ENS {
   name(name) {
     return new Name({
       name,
-      ens: this.ens,
+      sid: this.sid,
       provider: this.provider,
       signer: this.signer,
     })
@@ -375,7 +375,7 @@ export default class ENS {
 
   resolver(address) {
     return new Resolver({
-      ens: this.ens,
+      sid: this.sid,
       provider: this.provider,
       address: address,
     })
@@ -383,7 +383,7 @@ export default class ENS {
 
   async getName(address) {
     const reverseNode = `${address.slice(2)}.addr.reverse`
-    const resolverAddr = await this.ens.resolver(namehash(reverseNode))
+    const resolverAddr = await this.sid.resolver(namehash(reverseNode))
     return this.getNameWithResolver(address, resolverAddr)
   }
 
@@ -425,7 +425,7 @@ export default class ENS {
 export {
   namehash,
   labelhash,
-  getENSContract,
+  getSIDContract,
   getResolverContract,
-  getEnsAddress,
+  getSidAddress,
 }

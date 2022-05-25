@@ -1,35 +1,43 @@
-## Note: We are working on the next version of this library, which will include batch calling and other features. Once that is out, we will be deprecating this library. We generally recommend [ethers.js](https://docs.ethers.io/v5/api/providers/provider/#Provider--ens-methods)
+# Use sidjs SDK to interact with SID contracts 
 
-# ENS.js V2
 
-This is the rewrite of `ensjs`. If you are looking for the previous version, look for [ethereum-ens](https://www.npmjs.com/package/ethereum-ens)
+# SID.js V2
 
 ## Overview of the API
 
 ### Setup
 
 ```
-import ENS, { getEnsAddress } from '@ensdomains/ensjs'
+const SID = require('@siddomains/sidjs').default      
+const SIDfunctions = require('@siddomains/sidjs')                                                                                                                                                                                
+const Web3 = require('web3')                                                                                                                
 
+let sid 
 
+async function main(name) {
+  const infura = "https://data-seed-prebsc-1-s1.binance.org:8545/"  
+  const provider = new Web3.providers.HttpProvider(infura)
+  sid = new SID({ provider, sidAddress: SIDfunctions.getSidAddress('97') })
 
-const ens = new ENS({ provider, ensAddress: getEnsAddress('1') })
+  const address = await sid.name(name).getAddress() // 0x123                                                                                
+  console.log(address of ${name} is ${address})                                                                                           
 
-ens.name('resolver.eth').getAddress() // 0x123
+}                                                                                                                                           
+main("resolver.bnb")
 ```
 
 ### exports
 
 ```
-default - ENS
-getEnsAddress
+default - SID
+getSidAddress
 getResolverContract
-getENSContract
+getSIDContract
 namehash
 labelhash
 ```
 
-### ENS Interface
+### SID Interface
 
 ```
 name(name: String) => Name
@@ -38,114 +46,114 @@ name(name: String) => Name
 Returns a Name Object, that allows you to make record queries.
 
 ```
-resolver(address: EthereumAddress) => Resolver
+resolver(address: EvmAddress) => Resolver
 ```
 
 Returns a Resolver Object, allowing you to query names from this specific resolver. Most useful when querying a different resolver that is different than is currently recorded on the registry. E.g. migrating to a new resolver
 
 ```
-async getName(address: EthereumAddress) => Promise<Name>
+async getName(address: EvmAddress) => Promise<Name>
 ```
 
-Returns the reverse record for a particular Ethereum address.
+Returns the reverse record for a particular Evm address.
 
 ```
 async setReverseRecord(name: Name) => Promise<EthersTxObject>
 ```
 
-Sets the reverse record for the current Ethereum address
+Sets the reverse record for the current Evm address
 
 ### Name Interface
 
 ```ts
-async getOwner() => Promise<EthereumAddress>
+async getOwner() => Promise<EvmAddress>
 ```
 
-Returns the owner/controller for the current ENS name.
+Returns the owner/controller for the current SID name.
 
 ```ts
-async setOwner(address: EthereumAddress) => Promise<Ethers>
+async setOwner(address: EvmAddress) => Promise<Ethers>
 ```
 
-Sets the owner/controller for the current ENS name.
+Sets the owner/controller for the current SID name.
 
 ```ts
-async getResolver() => Promise<EthereumAddress>
+async getResolver() => Promise<EvmAddress>
 ```
 
-Returns the resolver for the current ENS name.
+Returns the resolver for the current SID name.
 
 ```ts
-async setResolver(address: EthereumAddress) => Promise<EthereumAddress>
+async setResolver(address: EvmAddress) => Promise<EvmAddress>
 ```
 
-Sets the resolver for the current ENS name.
+Sets the resolver for the current SID name.
 
 ```ts
 async getTTL() => Promise<Number>
 ```
 
-Returns the TTL for the current ENS name.
+Returns the TTL for the current SID name.
 
 ```ts
-async getAddress(coinId: String) => Promise<EthereumAddress>
+async getAddress(coinId: String) => Promise<EvmAddress>
 ```
 
-Returns the address for the current ENS name for the coinId provided.
+Returns the address for the current SID name for the coinId provided.
 
 ```ts
-async setAddress(coinId: String, address: EthereumAddress) => Promise<EthersTxObject>
+async setAddress(coinId: String, address: EvmAddress) => Promise<EthersTxObject>
 ```
 
-Sets the address for the current ENS name for the coinId provided.
+Sets the address for the current SID name for the coinId provided.
 
 ```ts
 async getContent() => Promise<ContentHash>
 ```
 
-Returns the contentHash for the current ENS name.
+Returns the contentHash for the current SID name.
 
 ```ts
 async setContenthash(content: ContentHash) => Promise<EthersTxObject>
 ```
 
-Sets the contentHash for the current ENS name.
+Sets the contentHash for the current SID name.
 
 ```ts
 async getText(key: String) => Promise<String>
 ```
 
-Returns the text record for a given key for the current ENS name.
+Returns the text record for a given key for the current SID name.
 
 ```ts
 async setText(key: String, recordValue: String) => Promise<EthersTxObject>
 ```
 
-Sets the text record for a given key for the current ENS name.
+Sets the text record for a given key for the current SID name.
 
 ```ts
-async setSubnodeOwner(label: String, newOwner: EthereumAddress) => Promise<EthersTxObject>
+async setSubnodeOwner(label: String, newOwner: EvmAddress) => Promise<EthersTxObject>
 ```
 
-Sets the subnode owner for a subdomain of the current ENS name.
+Sets the subnode owner for a subdomain of the current SID name.
 
 ```ts
-async setSubnodeRecord(label: String, newOwner: EthereumAddress, resolver: EthereumAddress, ttl: ?Number) => Promise<EthersTxObject>
+async setSubnodeRecord(label: String, newOwner: EvmAddress, resolver: EvmAddress, ttl: ?Number) => Promise<EthersTxObject>
 ```
 
-Sets the subnode owner, resolver, ttl for a subdomain of the current ENS name in one transaction.
+Sets the subnode owner, resolver, ttl for a subdomain of the current SID name in one transaction.
 
 ```ts
  async createSubdomain(label: String) => Promise<EthersTxObject>
 ```
 
-Creates a subdomain for the current ENS name. Automatically sets the owner to the signing account.
+Creates a subdomain for the current SID name. Automatically sets the owner to the signing account.
 
 ```ts
 async deleteSubdomain(label: String) => Promise<EthersTxObject>
 ```
 
-Deletes a subdomain for the current ENS name. Automatically sets the owner to "0x0..."
+Deletes a subdomain for the current SID name. Automatically sets the owner to "0x0..."
 
 ## Resolver Interface
 
@@ -160,7 +168,3 @@ name(name) => Name
 ```
 
 Returns a Name Object that hardcodes the resolver
-
-## NOTE
-
-The previous version of `ensjs` can be found at https://github.com/ensdomains/ensjs/tree/v1

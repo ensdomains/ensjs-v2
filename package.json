@@ -1,9 +1,9 @@
 {
-  "name": "@ensdomains/ensjs",
-  "version": "2.1.0",
-  "description": "ens.js v2",
+  "name": "@siddomains/sidjs",
+  "version": "0.1.1",
+  "description": "sid.js v2",
   "main": "dist/index.js",
-  "repository": "ensdomains/ensjs",
+  "repository": "siddomains/sidjs",
   "files": [
     "dist"
   ],
@@ -46,9 +46,9 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.4.4",
-    "@ensdomains/address-encoder": "^0.1.7",
-    "@ensdomains/ens": "0.4.5",
-    "@ensdomains/resolver": "0.2.4",
+    "@siddomains/address-encoder": "^0.1.7",
+    "@siddomains/resolver": "0.1.1",
+    "@siddomains/sid": "0.1.2",
     "content-hash": "^2.5.2",
     "eth-ens-namehash": "^2.0.8",
     "ethers": "^5.0.13",

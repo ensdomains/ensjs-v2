@@ -8,6 +8,7 @@
 ### Setup
 
 ```
+// bnb domain example
 const SID = require('@siddomains/sidjs').default      
 const SIDfunctions = require('@siddomains/sidjs')                                                                                                                                                                                
 const Web3 = require('web3')                                                                                                                
@@ -24,6 +25,27 @@ async function main(name) {
 
 }                                                                                                                                           
 main("resolver.bnb")
+```
+
+```
+// ens domain example
+const SID = require('@siddomains/sidjs').default      
+const SIDfunctions = require('@siddomains/sidjs')                                                                                                                                                                                
+const Web3 = require('web3')                                                                                                                
+
+let sid 
+
+async function main(name) {
+  const infura = "https://web3.ens.domains/v1/mainnet"
+  const provider = new Web3.providers.HttpProvider(infura)
+  sid = new SID({ provider, sidAddress: SIDfunctions.getSidAddress('1') })
+
+  const address = await sid.name(name).getAddress() // 0x123                                                                                
+  console.log("address of ${name} is ${address}", name, address)  )                                                                                           
+
+}                                                                                                                                           
+main("resolver.ens")
+
 ```
 
 ### exports

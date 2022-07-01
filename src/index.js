@@ -16,6 +16,8 @@ const utils = ethers.utils
 function getSidAddress(networkId) {
   if ([97].includes(parseInt(networkId))) {
     return '0x60fcB83fAd91335EBf6e9bB81d79b973bf3DA3e2'
+  } else if ([1, 3, 4, 5].includes(parseInt(networkId))) {
+    return '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e'
   }
 }
 

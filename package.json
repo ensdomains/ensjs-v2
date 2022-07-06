@@ -1,6 +1,6 @@
 {
   "name": "@siddomains/sidjs",
-  "version": "0.1.1",
+  "version": "0.1.4",
   "description": "sid.js v2",
   "main": "dist/index.js",
   "repository": "siddomains/sidjs",

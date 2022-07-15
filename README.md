@@ -27,7 +27,7 @@ async function main(name) {
   sid = new SID({ provider, sidAddress: SIDfunctions.getSidAddress('97') })
 
   const address = await sid.name(name).getAddress() // 0x123                                                                                
-  console.log(address of ${name} is ${address})                                                                                           
+  console.log("name: %s, address: %s", name, address)                                                                                          
 
 }                                                                                                                                           
 main("resolver.bnb")
@@ -47,7 +47,7 @@ async function main(name) {
   sid = new SID({ provider, sidAddress: SIDfunctions.getSidAddress('56') })
 
   const address = await sid.name(name).getAddress() // 0x123                                                                                
-  console.log(address of ${name} is ${address})                                                                                           
+  console.log("name: %s, address: %s", name, address)                                                                                          
 
 }                                                                                                                                           
 main("resolver.bnb")
@@ -67,7 +67,7 @@ async function main(name) {
   sid = new SID({ provider, sidAddress: SIDfunctions.getSidAddress('1') })
 
   const address = await sid.name(name).getAddress() // 0x123                                                                                
-  console.log("address of ${name} is ${address}", name, address)  )                                                                                           
+  console.log("name: %s, address: %s", name, address)                                                                                          
 
 }                                                                                                                                           
 main("resolver.ens")

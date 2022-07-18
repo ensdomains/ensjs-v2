@@ -1,14 +1,20 @@
 # Use sidjs SDK to interact with SID contracts 
 
 
-# SID.js V2
+# SID.js
+SIDjs integrates the SID contract and ENS and supports all the ENSjs APIs,  you will only need one unified SDK to integrate all domains across multiple chains. SIDjs will hide all the complicated cross-chain detail from the partners, making the integration very easy.
 
 ## Overview of the API
 
-### Setup
-
+### Installation
+Install @siddomains/sidjs, alongside [web3](https://www.npmjs.com/package/web3).
 ```
-// bnb domain example
+npm install @siddomains/sidjs web3
+```
+### Getting Started
+All that's needed to get started is a web3 provider instance, you should pass it and select network id when creating a new SID instance.
+```
+// bsc test domain example
 const SID = require('@siddomains/sidjs').default      
 const SIDfunctions = require('@siddomains/sidjs')                                                                                                                                                                                
 const Web3 = require('web3')                                                                                                                
@@ -21,7 +27,27 @@ async function main(name) {
   sid = new SID({ provider, sidAddress: SIDfunctions.getSidAddress('97') })
 
   const address = await sid.name(name).getAddress() // 0x123                                                                                
-  console.log(address of ${name} is ${address})                                                                                           
+  console.log("name: %s, address: %s", name, address)                                                                                          
+
+}                                                                                                                                           
+main("resolver.bnb")
+```
+
+```
+// bsc mainnet domain example
+const SID = require('@siddomains/sidjs').default      
+const SIDfunctions = require('@siddomains/sidjs')                                                                                                                                                                                
+const Web3 = require('web3')                                                                                                                
+
+let sid 
+
+async function main(name) {
+  const infura = "https://bsc-dataseed.binance.org/"  
+  const provider = new Web3.providers.HttpProvider(infura)
+  sid = new SID({ provider, sidAddress: SIDfunctions.getSidAddress('56') })
+
+  const address = await sid.name(name).getAddress() // 0x123                                                                                
+  console.log("name: %s, address: %s", name, address)                                                                                          
 
 }                                                                                                                                           
 main("resolver.bnb")
@@ -41,7 +67,7 @@ async function main(name) {
   sid = new SID({ provider, sidAddress: SIDfunctions.getSidAddress('1') })
 
   const address = await sid.name(name).getAddress() // 0x123                                                                                
-  console.log("address of ${name} is ${address}", name, address)  )                                                                                           
+  console.log("name: %s, address: %s", name, address)                                                                                          
 
 }                                                                                                                                           
 main("resolver.ens")

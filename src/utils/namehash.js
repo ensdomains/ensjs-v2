@@ -19,7 +19,7 @@ export function namehash(inputName) {
         let normalisedLabel = normalize(labels[i])
         labelSha = sha3(normalisedLabel)
       }
-      node = sha3(new Buffer(node + labelSha, 'hex'))
+      node = sha3(new Buffer.from(node + labelSha, 'hex'))
     }
   }
 

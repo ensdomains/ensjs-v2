@@ -19,7 +19,7 @@ function getSidAddress(networkId) {
   } else if ([1, 3, 4, 5].includes(parseInt(networkId))) {
     return '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e'
   } else if ([56].includes(parseInt(networkId))) {
-    return '0x71B7E42375fa5c9ED91af416e190EA007c33F120'
+    return '0x08CEd32a7f3eeC915Ba84415e9C07a7286977956'
   }
 }
 

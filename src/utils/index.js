@@ -14,6 +14,7 @@ import {
 } from './contents'
 import { normalize } from 'eth-ens-namehash'
 import { namehash } from './namehash'
+import {checkRestrict} from "./checkRestrict";
 
 //import { checkLabelHash } from '../updaters/preImageDB'
 
@@ -48,6 +49,10 @@ function validateName(name) {
   const nameArray = name.split('.')
   const hasEmptyLabels = nameArray.filter((e) => e.length < 1).length > 0
   if (hasEmptyLabels) throw new Error('Domain cannot have empty labels')
+
+  const valid = nameArray.every(checkRestrict)
+  if (!valid) throw new Error('Domain contains invalid characters')
+
   const normalizedArray = nameArray.map((label) => {
     return isEncodedLabelhash(label) ? label : normalize(label)
   })

@@ -5,7 +5,7 @@ import { abi as sidContract } from '@siddomains/sid/build/contracts/SID.json'
 import { abi as resolverContract } from '@siddomains/resolver/build/contracts/Resolver.json'
 import { abi as reverseRegistrarContract } from '@siddomains/sid/build/contracts/ReverseRegistrar.json'
 
-import { emptyAddress, namehash, labelhash } from './utils'
+import {emptyAddress, namehash, labelhash, validateName} from './utils'
 import {
   isValidContenthash,
   encodeContenthash,
@@ -369,6 +369,7 @@ export default class SID {
   }
 
   name(name) {
+    validateName(name)
     return new Name({
       name,
       sid: this.sid,

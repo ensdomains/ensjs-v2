@@ -1,5 +1,6 @@
 import { ethers } from 'ethers'
-
+import { validate as ensValidate } from '@ensdomains/ens-validation'
+import { toArray } from 'lodash'
 import {
   isEncodedLabelhash,
   isDecrypted,
@@ -44,10 +45,53 @@ function getEnsStartBlock(networkId) {
 const mergeLabels = (labels1, labels2) =>
   labels1.map((label, index) => (label ? label : labels2[index]))
 
+function validateLabelLength(name) {
+    if (!name) {
+        return false
+    }
+    if (toArray(name).length < 3) {
+        return false
+    }
+    let normalizedValue
+    try {
+        normalizedValue = normalize(name)
+    } catch (e) {
+        normalizedValue = name
+    }
+    if (normalizedValue.length < 3) {
+        return false
+    }
+    return true
+}
+
+function validateDomains(value){
+    const nospecial = /^[^*|\\":<>[\]{}`\\\\()';@&$]+$/u
+    const blackList =
+        // eslint-disable-next-line no-control-regex
+        /[\u0000-\u002c\u002e-\u002f\u003a-\u005e\u0060\u007b-\u007f]/g
+    if (!nospecial.test(value)) {
+        return false
+    } else if (blackList.test(value)) {
+        return false
+    } else if (!ensValidate(value)) {
+        return false
+    }
+    return true
+}
+
 function validateName(name) {
-  const nameArray = name.split('.')
+    let domain = name;
+    let suffix = '';
+    let i = name.lastIndexOf('.');
+    if (i > 0) {
+        domain = name.substring(0, i);
+        suffix = name.substring(i);
+    }
+  const nameArray = [domain, suffix]
   const hasEmptyLabels = nameArray.filter((e) => e.length < 1).length > 0
-  if (hasEmptyLabels) throw new Error('Domain cannot have empty labels')
+  if (hasEmptyLabels) throw new Error('Domain cannot have empty labels');
+  if (!validateLabelLength(domain)) throw new Error('Invalid name');
+  if (!validateDomains(domain)) throw new Error('Invalid name');
   const normalizedArray = nameArray.map((label) => {
     return isEncodedLabelhash(label) ? label : normalize(label)
   })

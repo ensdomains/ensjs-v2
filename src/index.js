@@ -389,7 +389,13 @@ export default class SID {
   async getName(address) {
     const reverseNode = `${address.slice(2)}.addr.reverse`
     const resolverAddr = await this.sid.resolver(namehash(reverseNode))
-    return this.getNameWithResolver(address, resolverAddr)
+    const res = await this.getNameWithResolver(address, resolverAddr)
+    const addr = await this.name(res.name).getAddress()
+    if (addr.toLowerCase() === address.toLowerCase()) {
+      return res
+    } else {
+      throw new Error('Name not found')
+    }
   }
 
   async getNameWithResolver(address, resolverAddr) {

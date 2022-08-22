@@ -80,6 +80,9 @@ function validateDomains(value){
 }
 
 function validateName(name) {
+    if (!name){
+        throw new Error('Invalid name');
+    }
     let domain = name;
     let suffix = '';
     let i = name.lastIndexOf('.');

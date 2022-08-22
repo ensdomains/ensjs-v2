@@ -1,0 +1,1 @@
+export const rpc_api = "https://bsc-mainnet.nodereal.io/v1/c4bc3afc2f804d4ea74fafb295828c97"

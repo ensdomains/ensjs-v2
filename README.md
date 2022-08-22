@@ -216,3 +216,11 @@ name(name) => Name
 ```
 
 Returns a Name Object that hardcodes the resolver
+
+Build SDK and test on your test machine
+
+```shell
+yarn install
+yarn run build
+node main.js
+```

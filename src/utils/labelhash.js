@@ -1,5 +1,5 @@
 const sha3 = require('js-sha3').keccak_256
-import { normalize } from 'eth-ens-namehash'
+import namehash from '@ensdomains/eth-ens-namehash'
 
 export function encodeLabelhash(hash) {
   if (!hash.startsWith('0x')) {
@@ -44,5 +44,5 @@ export function isDecrypted(name) {
 export function labelhash(unnormalisedLabelOrLabelhash) {
   return isEncodedLabelhash(unnormalisedLabelOrLabelhash)
     ? '0x' + decodeLabelhash(unnormalisedLabelOrLabelhash)
-    : '0x' + sha3(normalize(unnormalisedLabelOrLabelhash))
+    : '0x' + sha3(namehash.normalize(unnormalisedLabelOrLabelhash))
 }

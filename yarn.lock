@@ -1028,6 +1028,11 @@
     testrpc "0.0.1"
     web3-utils "^1.0.0-beta.31"
 
+"@ensdomains/eth-ens-namehash@^2.0.15":
+  version "2.0.15"
+  resolved "https://registry.yarnpkg.com/@ensdomains/eth-ens-namehash/-/eth-ens-namehash-2.0.15.tgz#5e5f2f24ba802aff8bc19edd822c9a11200cdf4a"
+  integrity sha512-JRDFP6+Hczb1E0/HhIg0PONgBYasfGfDheujmfxaZaAv/NAH4jE6Kf48WbqfRZdxt4IZI3jl3Ri7sZ1nP09lgw==
+
 "@ensdomains/mock@^2.0.37":
   version "2.1.44"
   resolved "https://registry.yarnpkg.com/@ensdomains/mock/-/mock-2.1.44.tgz#62a8bc5ef68d2b387d62d3fe0e1c424b1a7ec600"

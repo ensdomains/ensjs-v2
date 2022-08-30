@@ -1,5 +1,5 @@
 import { isEncodedLabelhash, decodeLabelhash } from './labelhash'
-import { normalize } from 'eth-ens-namehash'
+import namehase from '@ensdomains/eth-ens-namehash'
 const sha3 = require('js-sha3').keccak_256
 
 export function namehash(inputName) {
@@ -16,7 +16,7 @@ export function namehash(inputName) {
       if (isEncodedLabelhash(labels[i])) {
         labelSha = decodeLabelhash(labels[i])
       } else {
-        let normalisedLabel = normalize(labels[i])
+        let normalisedLabel = namehase.normalize(labels[i])
         labelSha = sha3(normalisedLabel)
       }
       node = sha3(new Buffer.from(node + labelSha, 'hex'))

@@ -47,11 +47,11 @@
   "dependencies": {
     "@babel/runtime": "^7.4.4",
     "@ensdomains/ens-validation": "^0.1.0",
+    "@ensdomains/eth-ens-namehash": "^2.0.15",
     "@siddomains/address-encoder": "^0.0.3",
     "@siddomains/resolver": "0.1.1",
     "@siddomains/sid": "0.1.2",
     "content-hash": "^2.5.2",
-    "eth-ens-namehash": "^2.0.8",
     "ethers": "^5.0.13",
     "js-sha3": "^0.8.0",
     "lodash": "^4.17.21"

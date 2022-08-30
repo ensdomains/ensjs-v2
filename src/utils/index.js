@@ -13,8 +13,9 @@ import {
     decodeContenthash,
     isValidContenthash,
 } from './contents'
-import {normalize} from 'eth-ens-namehash'
+import ensNamehash from '@ensdomains/eth-ens-namehash'
 import {namehash} from './namehash'
+import whitelist from "../constants/whitelist";
 
 //import { checkLabelHash } from '../updaters/preImageDB'
 
@@ -54,7 +55,7 @@ function validateLabelLength(name) {
     }
     let normalizedValue
     try {
-        normalizedValue = normalize(name)
+        normalizedValue = ensNamehash.normalize(name)
     } catch (e) {
         normalizedValue = name
     }
@@ -96,10 +97,12 @@ function validateName(name) {
     }
     const hasEmptyLabels = nameArray.filter((e) => e.length < 1).length > 0
     if (hasEmptyLabels) throw new Error('Domain cannot have empty labels');
-    if (!validateLabelLength(domain)) throw new Error('Invalid name');
+    if (!validateLabelLength(domain) && !whitelist.includes(name.toLowerCase())) {
+        throw new Error('Invalid name');
+    }
     if (!validateDomains(domain)) throw new Error('Invalid name');
     const normalizedArray = nameArray.map((label) => {
-        return isEncodedLabelhash(label) ? label : normalize(label)
+        return isEncodedLabelhash(label) ? label : ensNamehash.normalize(label)
     })
     try {
         return normalizedArray.join('.')

@@ -36,14 +36,14 @@ main("resolver.bnb")
 ```
 // bsc mainnet domain example
 const SID = require('@siddomains/sidjs').default      
-const SIDfunctions = require('@siddomains/sidjs')                                                                                                                                                                                
+const SIDfunctions = require('@siddomains/sidjs')
+const rpc = require('@siddomains/sidjs/dist/constants/rpc')                                                                                                                                                                                
 const Web3 = require('web3')                                                                                                                
 
 let sid 
 
 async function main(name) {
-  const infura = "https://bsc-dataseed.binance.org/"  
-  const provider = new Web3.providers.HttpProvider(infura)
+  const provider = new Web3.providers.HttpProvider(rpc.apis.bsc_mainnet)
   sid = new SID({ provider, sidAddress: SIDfunctions.getSidAddress('56') })
 
   const address = await sid.name(name).getAddress() // 0x123                                                                                
@@ -51,6 +51,7 @@ async function main(name) {
 
 }                                                                                                                                           
 main("resolver.bnb")
+
 ```
 
 ```

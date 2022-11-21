@@ -3,7 +3,7 @@
   "version": "0.1.16",
   "description": "sid.js v2",
   "main": "dist/index.js",
-  "repository": "siddomains/sidjs",
+  "repository": "Space-ID/sidjs",
   "files": [
     "dist"
   ],

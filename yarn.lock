@@ -1963,10 +1963,10 @@
     "@sentry/types" "5.30.0"
     tslib "^1.9.3"
 
-"@siddomains/address-encoder@^0.0.3":
-  version "0.0.3"
-  resolved "https://registry.yarnpkg.com/@siddomains/address-encoder/-/address-encoder-0.0.3.tgz#3de81a6018d16bda950d4ec5aef3de4e7423852f"
-  integrity sha512-ATJhczgXvMK6RtG1l1eiXUkNDUPJNancsXxk5UBXC4wzXpb9mCpaw+zjWUue4CBPP1b2zco1v8lyfDIDpfPRYw==
+"@siddomains/address-encoder@^0.0.4":
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/@siddomains/address-encoder/-/address-encoder-0.0.4.tgz#7938e7e85b403ac4fd30c877f25377c352c39d1c"
+  integrity sha512-GSQcRH28Es8zSHSJTwbtHTC3x2aWsjPP5+i9mLWJnY+IrdcFINxGV1bL+cri/IwJSPdiefMBjCjpym7WXWcehQ==
   dependencies:
     bech32 "^2.0.0"
     blakejs "^1.1.0"

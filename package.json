@@ -48,7 +48,7 @@
     "@babel/runtime": "^7.4.4",
     "@ensdomains/ens-validation": "^0.1.0",
     "@ensdomains/eth-ens-namehash": "^2.0.15",
-    "@siddomains/address-encoder": "^0.0.3",
+    "@siddomains/address-encoder": "^0.0.4",
     "@siddomains/resolver": "0.1.1",
     "@siddomains/sid": "0.1.2",
     "content-hash": "^2.5.2",

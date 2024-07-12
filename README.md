@@ -1,4 +1,4 @@
-## Note: We are working on the next version of this library, which will include batch calling and other features. Once that is out, we will be deprecating this library. We generally recommend [ethers.js](https://docs.ethers.io/v5/api/providers/provider/#Provider--ens-methods)
+## Note: ENSjs V2 is deprecated.
 
 # ENS.js V2
 

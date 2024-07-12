@@ -1,4 +1,4 @@
-## Note: ENSjs V2 is deprecated.
+## Note: ENSjs V2 is deprecated. Go [here](https://github.com/ensdomains/ensjs) for the latest version.
 
 # ENS.js V2
 

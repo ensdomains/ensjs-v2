@@ -9,13 +9,32 @@ This is the rewrite of `ensjs`. If you are looking for the previous version, loo
 ### Setup
 
 ```
+// ES6 syntax
 import ENS, { getEnsAddress } from '@ensdomains/ensjs'
+const ethers = require('ethers');
 
+//Provider can be a web3 or ethers provider
+const provider = new ethers.providers.JsonRpcProvider('https://main-light.eth.linkpool.io/');
 
+const ens = new ENS({ provider, ensAddress:getEnsAddress('1') })
 
-const ens = new ENS({ provider, ensAddress: getEnsAddress('1') })
+ens.name('ens.eth').getAddress().then(addr => console.log(addr)) // 0x123
+```
+```
+// ES5
+const ENSModule = require('@ensdomains/ensjs');
+const ethers = require('ethers');
 
-ens.name('resolver.eth').getAddress() // 0x123
+const ENS = ENSModule.default;
+const getEnsAddress = ENSModule.getEnsAddress;
+
+//Provider can be a web3 or ethers provider
+const provider = new ethers.providers.JsonRpcProvider('https://main-light.eth.linkpool.io/');
+
+const ens = new ENS({ provider, ensAddress:getEnsAddress('1') })
+
+ens.name('ens.eth').getAddress().then(addr => console.log(addr)) // 0x123
+
 ```
 
 ### exports

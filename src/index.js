@@ -134,7 +134,8 @@ async function setContenthashWithResolver({
 }) {
   let encodedContenthash = content
   if (parseInt(content, 16) !== 0) {
-    encodedContenthash = encodeContenthash(content)
+    const { encoded } = encodeContenthash(content)
+    encodedContenthash = encoded
   }
   const Resolver = getResolverContract({
     address: resolverAddr,

@@ -1,23 +1,30 @@
-import contentHash from 'content-hash'
-import { ethers } from 'ethers'
-import bs58 from 'bs58'
-const supportedCodecs = ['ipns-ns', 'ipfs-ns', 'swarm-ns', 'onion', 'onion3']
+import contentHash from '@ensdomains/content-hash'
+import { utils } from 'ethers'
+const supportedCodecs = ['ipns-ns', 'ipfs-ns', 'swarm-ns', 'onion', 'onion3', 'skynet-ns', 'arweave-ns']
 
-const utils = ethers.utils
+function matchProtocol(text){
+  return text.match(/^(ipfs|sia|ipns|bzz|onion|onion3|arweave|ar):\/\/(.*)/)
+    || text.match(/\/(ipfs)\/(.*)/)
+    || text.match(/\/(ipns)\/(.*)/)
+}
 
 export function decodeContenthash(encoded) {
   let decoded, protocolType, error
+  if(!encoded || encoded === '0x'){
+    return {}
+  }
   if (encoded.error) {
     return { protocolType: null, decoded: encoded.error }
+  }else if(encoded === false){
+    return { protocolType: null, decoded: 'invalid value' }
   }
   if (encoded) {
     try {
       decoded = contentHash.decode(encoded)
       const codec = contentHash.getCodec(encoded)
-      if (codec === 'ipfs-ns') {
+      if (codec === 'ipfs-ns') {         
         protocolType = 'ipfs'
       } else if (codec === 'ipns-ns') {
-        decoded = bs58.decode(decoded).slice(2).toString()
         protocolType = 'ipns'
       } else if (codec === 'swarm-ns') {
         protocolType = 'bzz'
@@ -25,6 +32,10 @@ export function decodeContenthash(encoded) {
         protocolType = 'onion'
       } else if (codec === 'onion3') {
         protocolType = 'onion3'
+      } else if (codec === 'skynet-ns') {
+        protocolType = 'sia'
+      } else if (codec === 'arweave-ns') {
+        protocolType = 'ar'
       } else {
         decoded = encoded
       }
@@ -35,11 +46,8 @@ export function decodeContenthash(encoded) {
   return { protocolType, decoded, error }
 }
 
-export function validateContent(encoded) {
-  return (
-    contentHash.isHashOfType(encoded, contentHash.Types.ipfs) ||
-    contentHash.isHashOfType(encoded, contentHash.Types.swarm)
-  )
+export function validateContent(encoded){
+  return contentHash.isHashOfType(encoded, contentHash.Types.ipfs) || contentHash.isHashOfType(encoded, contentHash.Types.swarm)
 }
 
 export function isValidContenthash(encoded) {
@@ -51,53 +59,72 @@ export function isValidContenthash(encoded) {
   }
 }
 
+export function getProtocolType(encoded) {
+  let protocolType, decoded
+  try {
+    let matched = matchProtocol(encoded)
+    if (matched) {
+      protocolType = matched[1]
+      decoded = matched[2]
+    }
+    return {
+      protocolType,
+      decoded
+    }
+  } catch (e) {
+    console.log(e)
+  }
+}
+
 export function encodeContenthash(text) {
   let content, contentType
   let encoded = false
+  let error  
   if (!!text) {
-    let matched =
-      text.match(/^(ipfs|ipns|bzz|onion|onion3):\/\/(.*)/) ||
-      text.match(/\/(ipfs)\/(.*)/) ||
-      text.match(/\/(ipns)\/(.*)/)
+    let matched = matchProtocol(text)
     if (matched) {
       contentType = matched[1]
       content = matched[2]
     }
     try {
       if (contentType === 'ipfs') {
-        if (content.length >= 4) {
-          encoded = '0x' + contentHash.encode('ipfs-ns', content)
+        if(content.length >= 4) {
+          encoded = '0x' + contentHash.encode('ipfs-ns', content);
         }
       } else if (contentType === 'ipns') {
-        let bs58content = bs58.encode(
-          Buffer.concat([
-            Buffer.from([0, content.length]),
-            Buffer.from(content),
-          ])
-        )
-        encoded = '0x' + contentHash.encode('ipns-ns', bs58content)
+        encoded = '0x' + contentHash.encode('ipns-ns', content);
       } else if (contentType === 'bzz') {
-        if (content.length >= 4) {
+        if(content.length >= 4) {
           encoded = '0x' + contentHash.fromSwarm(content)
         }
       } else if (contentType === 'onion') {
-        if (content.length == 16) {
-          encoded = '0x' + contentHash.encode('onion', content)
-        }
+        if(content.length == 16) {
+          encoded = '0x' + contentHash.encode('onion', content);  
+        } 
       } else if (contentType === 'onion3') {
-        if (content.length == 56) {
-          encoded = '0x' + contentHash.encode('onion3', content)
+        if(content.length == 56) {
+          encoded = '0x' + contentHash.encode('onion3', content);  
+        }
+      } else if (contentType === 'sia'){
+        if(content.length == 46) {
+          encoded = '0x' + contentHash.encode('skynet-ns', content);
+        }
+      } else if (contentType === 'arweave' || contentType === 'ar'){
+        if(content.length == 43) {
+          encoded = '0x' + contentHash.encode('arweave-ns', content);
         }
       } else {
         console.warn('Unsupported protocol or invalid value', {
           contentType,
-          text,
+          text
         })
       }
     } catch (err) {
-      console.warn('Error encoding content hash', { text, encoded })
+      const errorMessage = 'Error encoding content hash'
+      console.warn(errorMessage, { text, encoded })
+      error = errorMessage
       //throw 'Error encoding content hash'
     }
   }
-  return encoded
+  return { encoded, error }
 }

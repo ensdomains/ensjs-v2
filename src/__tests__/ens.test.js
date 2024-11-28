@@ -5,6 +5,7 @@ import ganache from 'ganache-core'
 import {
   setupWeb3 as setupWeb3Test,
   getAccounts,
+  getBlock,
 } from '../testing-utils/web3Util'
 import { deployENS } from '@ensdomains/mock'
 //import { getENS, getNamehash } from '../ens'
@@ -354,6 +355,21 @@ describe('Blockchain tests', () => {
       await tx.wait()
       const { name: nameAfter } = await ens.getName(accounts[0])
       expect(nameAfter).toBe('resolver.eth')
+    })
+
+    test('getName gets a name for an address at a specific block', async () => {
+      const accounts = await getAccounts()
+      let tx = await ens.setReverseRecord('somethingnew.eth')
+      await tx.wait()
+      const { number: blockNumber } = await getBlock()
+      const { name: name } = await ens.getName(accounts[0])
+      expect(name).toBe('somethingnew.eth')
+      tx = await ens.setReverseRecord('changeitagain.eth')
+      await tx.wait()
+      const { name: nameAfter } = await ens.getName(accounts[0])
+      expect(nameAfter).toBe('changeitagain.eth')
+      const { name: nameAtBlock } = await ens.getName(accounts[0], blockNumber)
+      expect(nameAtBlock).toBe('somethingnew.eth')
     })
   })
 

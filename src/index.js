@@ -196,10 +196,7 @@ class Resolver {
 
 class Name {
   constructor(options) {
-    const { name, ens, provider, signer, namehash: nh, resolver } = options
-    if (options.namehash) {
-      this.namehash = nh
-    }
+    const { name, ens, provider, signer, resolver } = options
     this.ens = ens
     this.ensWithSigner = this.ens.connect(signer)
     this.name = name
